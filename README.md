@@ -54,17 +54,19 @@ The command prints your access token. Copy it for the next step.
 
 ```bash
 # 1. Request a verification code
-curl -X POST https://voice-api.19pine.ai/api/v2/auth/setup \
+curl -X POST https://www.19pine.ai/api/v2/auth/email/request \
   -H "Content-Type: application/json" \
   -d '{"email": "you@example.com"}'
 
-# 2. Check your email for the 6-digit code, then verify
-curl -X POST https://voice-api.19pine.ai/api/v2/auth/verify \
+# Response: {"status":"success","data":{"request_token":"..."}}
+
+# 2. Check your email for the 6-digit code, then verify (include request_token from step 1)
+curl -X POST https://www.19pine.ai/api/v2/auth/email/verify \
   -H "Content-Type: application/json" \
-  -d '{"email": "you@example.com", "code": "123456"}'
+  -d '{"email": "you@example.com", "code": "123456", "request_token": "TOKEN_FROM_STEP_1"}'
 ```
 
-The JSON response includes an `access_token` field. Copy it for the next step.
+The JSON response includes `data.access_token`. Copy it for the next step.
 
 ### Step 2: Add the token to your plugin config
 
@@ -77,7 +79,7 @@ Open your `openclaw.json` and add the plugin entry with your token:
       "pine-voice": {
         "enabled": true,
         "config": {
-          "gateway_url": "https://voice-api.19pine.ai",
+          "gateway_url": "https://agent3-api-gateway-staging.19pine.ai",
           "access_token": "PASTE_YOUR_TOKEN_HERE"
         }
       }

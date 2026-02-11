@@ -9,7 +9,7 @@
       "gateway_url": {
         "type": "string",
         "description": "Pine Voice API Gateway URL",
-        "default": "https://voice-api.19pine.ai"
+        "default": "https://agent3-api-gateway-staging.19pine.ai"
       },
       "access_token": {
         "type": "string",
@@ -21,7 +21,7 @@
   "uiHints": {
     "gateway_url": {
       "label": "Gateway URL",
-      "placeholder": "https://voice-api.19pine.ai"
+      "placeholder": "https://agent3-api-gateway-staging.19pine.ai"
     },
     "access_token": {
       "label": "Pine Access Token",
