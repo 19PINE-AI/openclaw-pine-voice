@@ -1,0 +1,32 @@
+{
+  "id": "pine-voice",
+  "name": "Pine AI Voice Call",
+  "version": "0.1.0",
+  "description": "Make phone calls via Pine AI voice agent. The AI agent calls the specified number and carries out the conversation based on your instructions. Returns transcript and summary. Powered by Pine AI.",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "gateway_url": {
+        "type": "string",
+        "description": "Pine Voice API Gateway URL",
+        "default": "https://voice-api.19pine.ai"
+      },
+      "access_token": {
+        "type": "string",
+        "description": "Pine access token (from email verification or Pine dashboard)"
+      }
+    },
+    "required": ["access_token"]
+  },
+  "uiHints": {
+    "gateway_url": {
+      "label": "Gateway URL",
+      "placeholder": "https://voice-api.19pine.ai"
+    },
+    "access_token": {
+      "label": "Pine Access Token",
+      "sensitive": true
+    }
+  },
+  "skills": ["skills/pine-voice"]
+}
