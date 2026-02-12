@@ -3,6 +3,8 @@
 ## When to use
 Use `pine_voice_call` when the user wants you to **make a phone call** on their behalf. The Pine AI voice agent will call the specified number, navigate IVR systems, handle verification, conduct negotiations, and carry out the conversation autonomously.
 
+**Important:** The voice agent can only speak English. Calls can only be delivered to English-speaking countries and recipients who understand English. Do not use this tool for calls to non-English-speaking countries or recipients.
+
 ## Best for
 - Calling customer service to negotiate bills, request credits, or resolve issues
 - Scheduling meetings or appointments by phone
@@ -11,17 +13,17 @@ Use `pine_voice_call` when the user wants you to **make a phone call** on their 
 - Following up with contacts on behalf of the user
 
 ## How it works
-1. You provide the phone number, callee info, call objective, and detailed strategy
-2. Pine's AI voice agent makes the call (typically 1-30 minutes, up to 120 minutes for complex tasks)
-3. You receive the full transcript and a summary of the outcome
+1. **Gather all required information first** — ask the user for any authentication, verification, or payment details the callee may need (see below)
+2. You provide the phone number, callee info, call objective, and detailed strategy
+3. Pine's AI voice agent makes the call
+4. You receive the full transcript and a summary of the outcome
 
-## Critical: Provide Complete Context Upfront
-The voice agent **cannot ask you for more information during the call**. You must include everything the agent might need:
+## Critical: Gather All Required Information BEFORE Calling
+The voice agent **cannot ask a human for missing information during the call**. There is no way for the AI agent to pause and request details mid-conversation. You **must ask the user** for all information the callee might need **before** invoking this tool.
 
-- **Account details**: account numbers, PINs, last 4 of SSN, billing address — anything needed for verification
-- **Negotiation strategy**: target price, acceptable range, constraints, leverage points, what offers to reject
-- **Background**: why you're calling, what happened previously, relevant dates and amounts
-- **Constraints**: what changes are NOT acceptable (e.g., "do not downgrade plan", "do not cancel service")
+Anticipate what the callee will require based on the type of call. This may include authentication or verification details, payment information, negotiation targets and constraints, relevant background, or any other context specific to the task. The exact requirements vary — use your judgment to determine what the callee is likely to need.
+
+If the user hasn't provided sufficient information for the callee to process the request (e.g., a customer service call with no verification details), **ask the user for this information before proceeding**. Do not invoke the tool hoping it will work without it.
 
 ## Negotiation Calls
 For calls involving negotiation (bill reduction, rate matching, fee waiver), provide a **thorough negotiation strategy**, not just a target:
@@ -34,13 +36,13 @@ For calls involving negotiation (bill reduction, rate matching, fee waiver), pro
 - **Walk-away point**: "If nothing offered, ask for retention department"
 
 ## Tool parameters
-- `to` (required): Phone number in E.164 format (e.g., +14155551234)
+- `to` (required): Phone number in E.164 format (e.g., +14155551234). Must be a number in an English-speaking country.
 - `callee_name` (required): Name of the person or business being called
-- `callee_context` (required): Comprehensive context — include ALL info the agent may need during the call
+- `callee_context` (required): Comprehensive context — include all authentication, verification, and payment info the agent may need during the call
 - `objective` (required): Specific goal with negotiation targets and constraints if applicable
 - `instructions` (optional): Detailed strategy, approach, and behavioral instructions
 - `voice` (optional): "male" or "female"
-- `max_duration_minutes` (optional): 1-120, default 30
+- `max_duration_minutes` (optional): 1-120, default 120
 
 ## Examples
 

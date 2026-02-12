@@ -1,6 +1,6 @@
 # Pine AI Voice Call - OpenClaw Plugin
 
-Make phone calls via Pine AI's voice agent from OpenClaw. The AI agent calls the specified number, carries out the conversation based on your instructions, and returns a transcript and summary.
+Make phone calls via Pine AI's voice agent from OpenClaw. The AI agent calls the specified number, carries out the conversation based on your instructions, and returns a transcript and summary. **The voice agent can only speak English, so calls can only be delivered to English-speaking countries.**
 
 **Powered by [Pine AI](https://pine.ai). Subject to [Pine AI Voice Terms of Service](https://pine.ai/legal/voice-tos).**
 
@@ -139,19 +139,21 @@ Send a message to your OpenClaw agent:
 - "Phone the restaurant at +14155559876 to make a reservation for tonight at 7pm for 4 people"
 - "Call Comcast at +18001234567 and negotiate my bill down to $60/mo. My account is 1234567890, current plan is $89.99/mo. I've been a customer for 8 years. Don't change the plan tier."
 
-### Important: Provide thorough context
+### Important: English-speaking countries only
 
-The voice agent **cannot ask you for more info mid-call**. For the best results:
-- Include account numbers, verification info, and any relevant details upfront
-- For negotiations, provide your target, acceptable range, constraints, and strategy
-- The more complete the context, the better the outcome
+The voice agent can only speak English. Calls can only be placed to phone numbers in English-speaking countries (e.g., US, UK, Canada, Australia) and to recipients who understand English.
+
+### Important: Gather all required information first
+
+The voice agent **cannot ask a human for missing information mid-call**. There is no way for the AI to pause and request details during the conversation. Before making a call, make sure you have gathered all information the callee may need, including any authentication, verification, or payment details relevant to the task.
+
+The exact requirements vary depending on the type of call — anticipate what the callee will ask for and include it upfront. If calling customer service or any entity that verifies identity, **you must include sufficient verification information** — the call will fail without it.
 
 ## What happens
 
 1. The tool sends your instructions to Pine's voice agent
-2. The call typically takes 1-30 minutes (up to 120 minutes for complex tasks)
-3. While the call is in progress, your agent is waiting for the result
-4. You receive the full transcript and a summary when done
+2. While the call is in progress, your agent is waiting for the result
+3. You receive the full transcript and a summary when done
 
 > **Note:** While a call is in progress, your agent is waiting for the result. If you need to do other tasks simultaneously, use OpenClaw's sub-agents (`sessions_spawn`) to run the call in a background session.
 

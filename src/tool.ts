@@ -13,21 +13,26 @@ export function registerVoiceCallTool(api: any) {
       description:
         "Make a phone call via Pine AI voice agent. The agent calls the specified number and handles the " +
         "conversation (including IVR navigation, negotiation, and verification) based on your instructions. " +
-        "Provide thorough context and strategy upfront — the agent CANNOT ask for more info mid-call. " +
+        "Important: the voice agent can only speak English, so calls can only be delivered to English-speaking " +
+        "countries and recipients who understand English. " +
+        "BEFORE calling this tool, you MUST gather from the user all information that may be needed during " +
+        "the call, including any authentication, verification, or payment details the callee may require. " +
+        "The voice agent has no way to contact a human for missing information mid-call — anticipate what " +
+        "the callee will ask for and include it upfront. " +
         "For negotiations, include target outcome, acceptable range, constraints, and leverage points. " +
-        "Returns full transcript and summary. Calls typically take 1-30 minutes, up to 120 minutes for complex tasks. " +
+        "Returns full transcript and summary. " +
         "Powered by Pine AI.",
       parameters: Type.Object({
-        to: Type.String({ description: "Phone number to call (E.164 format, e.g. +14155551234)" }),
+        to: Type.String({ description: "Phone number to call (E.164 format, e.g. +14155551234). Must be a number in an English-speaking country, as the voice agent can only speak English." }),
         callee_name: Type.String({ description: "Name of the person or business being called" }),
-        callee_context: Type.String({ description: "Comprehensive context about the callee: who they are, their role, your relationship, relevant account numbers, verification info, and any details the voice agent may need. The agent cannot ask you for more info mid-call, so include everything upfront." }),
+        callee_context: Type.String({ description: "Comprehensive context about the callee and all information needed for the call. Include: who they are, your relationship, and any authentication, verification, or payment details the callee may require. The voice agent CANNOT ask a human for missing information mid-call, so you must anticipate what will be needed and include everything upfront." }),
         objective: Type.String({ description: "Specific goal the call should accomplish. For negotiations, include your target outcome, acceptable range, and constraints (e.g. 'Negotiate monthly bill down to $50/mo, do not accept above $65/mo, do not change plan tier')." }),
         instructions: Type.Optional(
           Type.String({ description: "Detailed strategy and instructions for the voice agent. For negotiations, describe: what leverage points to use, what offers to accept/reject, fallback positions, and when to walk away. The more thorough the strategy, the better the outcome." }),
         ),
         voice: Type.Optional(Type.String({ enum: ["male", "female"], description: "Voice gender" })),
         max_duration_minutes: Type.Optional(
-          Type.Number({ default: 30, minimum: 1, maximum: 120, description: "Maximum call duration in minutes" }),
+          Type.Number({ default: 120, minimum: 1, maximum: 120, description: "Maximum call duration in minutes" }),
         ),
       }),
       async execute(_toolCallId: string, params: any) {
@@ -53,7 +58,7 @@ export function registerVoiceCallTool(api: any) {
           await client.initialize();
 
           // 2. Map OpenClaw param names to MCP tool param names
-          const maxDuration = params.max_duration_minutes ?? 30;
+          const maxDuration = params.max_duration_minutes ?? 120;
           const ttlMs = maxDuration * 60 * 1000 + 120000; // call duration + 2min buffer
 
           // 3. Invoke tools/call with task param (async mode)
