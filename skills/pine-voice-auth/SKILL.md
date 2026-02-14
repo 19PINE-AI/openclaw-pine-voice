@@ -105,6 +105,26 @@ Save the `access_token` value.
 
 Read the existing `~/.openclaw/openclaw.json` (or the config file at `$OPENCLAW_CONFIG_PATH`), then set `plugins.entries.pine-voice.config.access_token` to the token value. If the `pine-voice` entry doesn't exist, create it:
 
+**For local development** (default):
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "pine-voice": {
+        "enabled": true,
+        "config": {
+          "gateway_url": "https://api-dev.pineclaw.com",
+          "access_token": "THE_ACCESS_TOKEN"
+        }
+      }
+    }
+  }
+}
+```
+
+**For staging / production**, use the staging gateway:
+
 ```json
 {
   "plugins": {
