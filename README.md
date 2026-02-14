@@ -32,63 +32,9 @@ openclaw gateway restart
 
 ## Configure
 
-Configuration has three parts: obtaining your access token, adding it to the plugin config, and enabling the tool for your agent.
+Configuration has two parts: enabling the tool for your agent, and authenticating with Pine AI.
 
-### Step 1: Obtain your Pine access token
-
-An access token is obtained via email verification using your Pine AI account email. Choose one of these methods:
-
-**Method A: Via the plugin CLI** (recommended)
-
-```bash
-# 1. Request a verification code (you'll receive it by email)
-openclaw pine-voice auth setup --email you@example.com
-
-# 2. Check your email for the 6-digit code, then verify
-openclaw pine-voice auth verify --email you@example.com --code 123456
-```
-
-The command prints your access token. Copy it for the next step.
-
-**Method B: Via curl**
-
-```bash
-# 1. Request a verification code
-curl -X POST https://www.19pine.ai/api/v2/auth/email/request \
-  -H "Content-Type: application/json" \
-  -d '{"email": "you@example.com"}'
-
-# Response: {"status":"success","data":{"request_token":"..."}}
-
-# 2. Check your email for the 6-digit code, then verify (include request_token from step 1)
-curl -X POST https://www.19pine.ai/api/v2/auth/email/verify \
-  -H "Content-Type: application/json" \
-  -d '{"email": "you@example.com", "code": "123456", "request_token": "TOKEN_FROM_STEP_1"}'
-```
-
-The JSON response includes `data.access_token`. Copy it for the next step.
-
-### Step 2: Add the token to your plugin config
-
-Open your `openclaw.json` and add the plugin entry with your token:
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "pine-voice": {
-        "enabled": true,
-        "config": {
-          "gateway_url": "https://agent3-api-gateway-staging.19pine.ai",
-          "access_token": "PASTE_YOUR_TOKEN_HERE"
-        }
-      }
-    }
-  }
-}
-```
-
-### Step 3: Enable the tool for your agent
+### Step 1: Enable the tool for your agent
 
 The `pine_voice_call` tool is registered as optional, which means your agent won't see it until you explicitly allow it. Add it to your agent's tool allowlist in `openclaw.json`:
 
@@ -121,19 +67,72 @@ The `pine_voice_call` tool is registered as optional, which means your agent won
 
 > **Note:** If your agent already has a `tools.allow` list with other tools, just append `"pine_voice_call"` to the existing array. If you're using `tools.profile` (e.g., `"coding"` or `"messaging"`), adding `"pine_voice_call"` to `tools.allow` will make it available alongside your profile's default tools — the profile won't be overridden.
 
-### Step 4: Restart the gateway
-
-After changing the config, restart the gateway to pick up the changes:
+### Step 2: Restart the gateway
 
 ```bash
 openclaw gateway restart
 ```
 
-Your agent should now have access to the `pine_voice_call` tool.
+Your agent now has access to the `pine_voice_call` tool.
 
-## Use it
+### Step 3: Authenticate with Pine AI
 
-Send a message to your OpenClaw agent:
+You have two options for when to authenticate:
+
+**Option A: Authenticate now (recommended)**
+
+We recommend authenticating right after installation. The auth flow requires an email verification code, so it's best done while you're actively setting things up — not later when the agent tries to make a call (which could be at any time).
+
+```bash
+# 1. Request a verification code (sent to your Pine AI account email)
+openclaw pine-voice auth setup --email you@example.com
+
+# 2. Check your email for the code, then verify
+openclaw pine-voice auth verify --email you@example.com --code 1234
+```
+
+The command prints your access token. Add it to your plugin config in `openclaw.json`:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "pine-voice": {
+        "enabled": true,
+        "config": {
+          "gateway_url": "https://agent3-api-gateway-staging.19pine.ai",
+          "access_token": "PASTE_YOUR_TOKEN_HERE"
+        }
+      }
+    }
+  }
+}
+```
+
+Then restart the gateway again:
+
+```bash
+openclaw gateway restart
+```
+
+**Option B: Let the agent handle it on first use**
+
+If you skip authentication, the plugin still loads and the tool is visible to your agent. The first time the agent tries to make a call, it will receive an error explaining that authentication is needed. The agent will then guide you through the email verification flow — it will ask for your email, run the auth commands, and configure the token for you.
+
+This works, but keep in mind: the email verification code arrives in your inbox, so you need to be available to provide it. If the agent tries to make a call while you're away (e.g., in an automated workflow or overnight), it will be blocked until you complete verification.
+
+## Try it out
+
+After setup, test that everything works by making a quick call to your own phone:
+
+```
+"Call my phone at +1XXXXXXXXXX. Tell me that Pine Voice is set up and working.
+Just confirm the setup is complete and say goodbye."
+```
+
+Replace `+1XXXXXXXXXX` with your actual phone number. You'll receive a call from Pine's voice agent, hear it speak, and get a transcript back — this confirms your token, subscription, and the full end-to-end flow are all working.
+
+Then try real tasks:
 
 - "Call John at +14155551234 and schedule a meeting for Tuesday"
 - "Phone the restaurant at +14155559876 to make a reservation for tonight at 7pm for 4 people"

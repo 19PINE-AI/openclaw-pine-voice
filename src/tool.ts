@@ -43,7 +43,25 @@ export function registerVoiceCallTool(api: any) {
             content: [
               {
                 type: "text",
-                text: "Pine Voice not configured. Set access_token in plugin config or run: openclaw pine-voice auth setup",
+                text: [
+                  "Pine Voice is not authenticated yet. An access token is required before making calls.",
+                  "",
+                  "To set up authentication, run these commands in the terminal:",
+                  "",
+                  "  # Step 1: Request a verification code (sent to your Pine AI account email)",
+                  "  openclaw pine-voice auth setup --email <USER_EMAIL>",
+                  "",
+                  "  # Step 2: Enter the code from your email to get an access token",
+                  "  openclaw pine-voice auth verify --email <USER_EMAIL> --code <CODE>",
+                  "",
+                  "  # Step 3: Add the token to your plugin config in openclaw.json:",
+                  '  #   plugins.entries.pine-voice.config.access_token = "<TOKEN>"',
+                  "",
+                  "  # Step 4: Restart the gateway",
+                  "  openclaw gateway restart",
+                  "",
+                  "Ask the user for their Pine AI account email to begin. If they don't have a Pine AI account, they can sign up at https://pine.ai.",
+                ].join("\n"),
               },
             ],
             isError: true,
@@ -104,6 +122,30 @@ export function registerVoiceCallTool(api: any) {
           return formatResult(result);
         } catch (err: any) {
           api.log?.error?.(`pine-voice: error: ${err.message}`);
+
+          // Detect expired/invalid token and provide re-auth guidance
+          const msg = err.message || "";
+          if (msg.includes("401") || msg.includes("TOKEN_EXPIRED") || msg.includes("Unauthorized")) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: [
+                    "Pine Voice authentication has expired or is invalid.",
+                    "",
+                    "To re-authenticate, run:",
+                    "  openclaw pine-voice auth setup --email <USER_EMAIL>",
+                    "  openclaw pine-voice auth verify --email <USER_EMAIL> --code <CODE>",
+                    "",
+                    "Then update the access_token in openclaw.json and restart the gateway.",
+                    "Ask the user for their Pine AI account email to begin.",
+                  ].join("\n"),
+                },
+              ],
+              isError: true,
+            };
+          }
+
           return {
             content: [{ type: "text", text: `Pine Voice Call Error: ${err.message}` }],
             isError: true,

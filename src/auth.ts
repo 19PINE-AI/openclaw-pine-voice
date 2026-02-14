@@ -63,7 +63,7 @@ export function registerAuthCommands(api: any) {
         .option("--request-token <token>", "Request token from auth setup step")
         .action(async (opts: any) => {
           if (!opts.code || !opts.email) {
-            console.log("Usage: openclaw pine-voice auth verify --email you@example.com --code 123456 --request-token <token>");
+            console.log("Usage: openclaw pine-voice auth verify --email you@example.com --code 1234 --request-token <token>");
             return;
           }
 

@@ -1,7 +1,7 @@
 /** Plugin configuration from openclaw.plugin.json configSchema */
 export interface PineVoiceConfig {
-  gateway_url: string;
-  access_token: string;
+  gateway_url?: string;
+  access_token?: string;
 }
 
 /** MCP JSON-RPC 2.0 request */

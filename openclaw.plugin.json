@@ -16,7 +16,7 @@
         "description": "Pine access token (from email verification or Pine dashboard)"
       }
     },
-    "required": ["access_token"]
+    "required": []
   },
   "uiHints": {
     "gateway_url": {
@@ -28,5 +28,5 @@
       "sensitive": true
     }
   },
-  "skills": ["skills/pine-voice"]
+  "skills": ["skills/pine-voice", "skills/pine-voice-auth"]
 }
