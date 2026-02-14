@@ -39,9 +39,8 @@ Pine Voice uses email-based verification. The flow has two API calls with a huma
 1. **Request** — send the user's email to get a `request_token`
 2. **Wait** — user checks their email for a verification code
 3. **Verify** — send email + request_token + code to get a `user_id` and `access_token`
-4. **Store** — write both values to the plugin config file
-5. **Restart** — restart the gateway to pick up the new config
-6. **Test** — make a test call to verify everything works
+4. **Store & restart** — write both values via `openclaw config set` and restart the gateway
+5. **Test** — make a test call to verify everything works
 
 ## Step-by-step instructions
 
@@ -103,35 +102,25 @@ Save **both** values:
 - `401` or `400` with "invalid code" — ask the user to double-check the code and try again.
 - `410` or "expired" — the request_token expired. Go back to step 2 to start over.
 
-### Step 5: Store the credentials
+### Step 5: Store the credentials and restart
 
-Read the existing `~/.openclaw/openclaw.json` (or the config file at `$OPENCLAW_CONFIG_PATH`), then set both `plugins.entries.pine-voice.config.user_id` and `plugins.entries.pine-voice.config.access_token`. If the `pine-voice` entry doesn't exist, create it:
+Use `openclaw config set` to write both values. Replace `THE_ACCESS_TOKEN` and `THE_USER_ID` with the actual values from step 4.
 
-```json
-{
-  "plugins": {
-    "entries": {
-      "pine-voice": {
-        "enabled": true,
-        "config": {
-          "user_id": "THE_USER_ID",
-          "access_token": "THE_ACCESS_TOKEN"
-        }
-      }
-    }
-  }
-}
-```
-
-### Step 6: Restart the gateway
-
-After updating the config, restart the gateway:
+**Important:** The user ID is all digits, so the CLI will parse it as a number unless you force it to be a JSON string with `--json` and explicit quotes.
 
 ```bash
+openclaw config set plugins.entries.pine-voice.config.access_token "THE_ACCESS_TOKEN"
+openclaw config set plugins.entries.pine-voice.config.user_id '"THE_USER_ID"' --json
 openclaw gateway restart
 ```
 
-### Step 7: Verify with a test call
+You can verify the stored values with:
+
+```bash
+openclaw config get plugins.entries.pine-voice.config
+```
+
+### Step 6: Verify with a test call
 
 After authentication is complete, suggest the user make a test call to their own phone number to verify everything works end-to-end:
 
