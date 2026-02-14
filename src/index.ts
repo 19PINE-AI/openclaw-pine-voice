@@ -1,19 +1,23 @@
-import { registerVoiceCallTool } from "./tool.js";
+import { registerVoiceCallTools } from "./tool.js";
 import { registerAuthCommands } from "./auth.js";
 
 /**
  * Pine AI Voice Call plugin for OpenClaw.
  *
  * Registers:
- * - pine_voice_call tool (optional, user must add to tools.allow)
+ * - pine_voice_call tool (initiate a phone call, returns immediately)
+ * - pine_voice_call_status tool (check call progress / get results)
  * - pine-voice CLI commands (auth setup/verify)
  *
- * The plugin is a thin MCP client that speaks JSON-RPC to Pine's MCP server.
- * All safety, billing, and prompt logic lives on Pine's side.
+ * The plugin makes direct HTTP calls to Pine's v2 REST API (POST to initiate,
+ * GET to poll). All safety, billing, and prompt logic lives on Pine's side.
+ *
+ * For non-blocking calls, the pine-voice skill instructs the AI to use
+ * sessions_spawn so the main agent stays responsive during long calls.
  */
 export default function register(api: any) {
-  // Register the voice call tool
-  registerVoiceCallTool(api);
+  // Register voice call tools (initiate + status)
+  registerVoiceCallTools(api);
 
   // Register CLI commands for authentication
   registerAuthCommands(api);
