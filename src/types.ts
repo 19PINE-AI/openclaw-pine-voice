@@ -2,6 +2,7 @@
 export interface PineVoiceConfig {
   gateway_url?: string;
   access_token?: string;
+  user_id?: string;
 }
 
 /** MCP JSON-RPC 2.0 request */

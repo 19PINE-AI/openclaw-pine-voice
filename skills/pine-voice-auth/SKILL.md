@@ -38,8 +38,8 @@ Pine Voice uses email-based verification. The flow has two API calls with a huma
 
 1. **Request** — send the user's email to get a `request_token`
 2. **Wait** — user checks their email for a verification code
-3. **Verify** — send email + code + request_token to get an `access_token`
-4. **Store** — write the token to the plugin config file
+3. **Verify** — send email + code + request_token to get a `user_id` and `access_token`
+4. **Store** — write both values to the plugin config file
 5. **Restart** — restart the gateway to pick up the new config
 6. **Test** — make a test call to verify everything works
 
@@ -92,18 +92,20 @@ curl -s -X POST https://www.19pine.ai/api/v2/auth/email/verify \
 **Expected response:**
 
 ```json
-{"status": "success", "data": {"access_token": "eyJ..."}}
+{"id": "1234567890", "access_token": "eyJ...", ...}
 ```
 
-Save the `access_token` value.
+Save **both** values:
+- **`id`** — the user's Pine user ID
+- **`access_token`** — the access token
 
 **If verification fails:**
 - `401` or `400` with "invalid code" — ask the user to double-check the code and try again.
 - `410` or "expired" — the request_token expired. Go back to step 2 to start over.
 
-### Step 5: Store the access token
+### Step 5: Store the credentials
 
-Read the existing `~/.openclaw/openclaw.json` (or the config file at `$OPENCLAW_CONFIG_PATH`), then set `plugins.entries.pine-voice.config.access_token` to the token value. If the `pine-voice` entry doesn't exist, create it:
+Read the existing `~/.openclaw/openclaw.json` (or the config file at `$OPENCLAW_CONFIG_PATH`), then set both `plugins.entries.pine-voice.config.user_id` and `plugins.entries.pine-voice.config.access_token`. If the `pine-voice` entry doesn't exist, create it:
 
 **For local development** (default):
 
@@ -115,6 +117,7 @@ Read the existing `~/.openclaw/openclaw.json` (or the config file at `$OPENCLAW_
         "enabled": true,
         "config": {
           "gateway_url": "https://api-dev.pineclaw.com",
+          "user_id": "THE_USER_ID",
           "access_token": "THE_ACCESS_TOKEN"
         }
       }
@@ -133,6 +136,7 @@ Read the existing `~/.openclaw/openclaw.json` (or the config file at `$OPENCLAW_
         "enabled": true,
         "config": {
           "gateway_url": "https://agent3-api-gateway-staging.19pine.ai",
+          "user_id": "THE_USER_ID",
           "access_token": "THE_ACCESS_TOKEN"
         }
       }

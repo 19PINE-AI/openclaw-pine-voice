@@ -13,7 +13,11 @@
       },
       "access_token": {
         "type": "string",
-        "description": "Pine access token (from email verification or Pine dashboard)"
+        "description": "Pine access token (from email verification)"
+      },
+      "user_id": {
+        "type": "string",
+        "description": "Pine user ID (the \"id\" field from email verification)"
       }
     },
     "required": []
@@ -26,6 +30,10 @@
     "access_token": {
       "label": "Pine Access Token",
       "sensitive": true
+    },
+    "user_id": {
+      "label": "Pine User ID",
+      "placeholder": "1234567890"
     }
   },
   "skills": ["skills/pine-voice", "skills/pine-voice-auth"]

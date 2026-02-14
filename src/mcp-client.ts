@@ -8,12 +8,14 @@ import type { JSONRPCRequest, JSONRPCResponse, MCPTask, CallResult } from "./typ
 export class PineMCPClient {
   private gatewayUrl: string;
   private accessToken: string;
+  private userId: string;
   private sessionId: string | null = null;
   private nextId = 1;
 
-  constructor(gatewayUrl: string, accessToken: string) {
+  constructor(gatewayUrl: string, accessToken: string, userId: string) {
     this.gatewayUrl = gatewayUrl.replace(/\/$/, "");
     this.accessToken = accessToken;
+    this.userId = userId;
   }
 
   /** Send a JSON-RPC 2.0 request to the MCP endpoint. */
@@ -29,6 +31,7 @@ export class PineMCPClient {
       "Content-Type": "application/json",
       Accept: "application/json",
       Authorization: `Bearer ${this.accessToken}`,
+      "X-Pine-User-Id": this.userId,
     };
     if (this.sessionId) {
       headers["Mcp-Session-Id"] = this.sessionId;
@@ -71,6 +74,7 @@ export class PineMCPClient {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.accessToken}`,
+        "X-Pine-User-Id": this.userId,
         "Mcp-Session-Id": this.sessionId || "",
       },
       body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),

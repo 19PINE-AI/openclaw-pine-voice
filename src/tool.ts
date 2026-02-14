@@ -38,23 +38,24 @@ export function registerVoiceCallTool(api: any) {
       async execute(_toolCallId: string, params: any) {
         // Read config on each invocation (supports hot-reload)
         const config = api.config?.plugins?.entries?.["pine-voice"]?.config as PineVoiceConfig | undefined;
-        if (!config?.access_token) {
+        if (!config?.access_token || !config?.user_id) {
           return {
             content: [
               {
                 type: "text",
                 text: [
-                  "Pine Voice is not authenticated yet. An access token is required before making calls.",
+                  "Pine Voice is not authenticated yet. Both a user ID and access token are required before making calls.",
                   "",
                   "To set up authentication, run these commands in the terminal:",
                   "",
                   "  # Step 1: Request a verification code (sent to your Pine AI account email)",
                   "  openclaw pine-voice auth setup --email <USER_EMAIL>",
                   "",
-                  "  # Step 2: Enter the code from your email to get an access token",
+                  "  # Step 2: Enter the code from your email to get your user ID and access token",
                   "  openclaw pine-voice auth verify --email <USER_EMAIL> --code <CODE>",
                   "",
-                  "  # Step 3: Add the token to your plugin config in openclaw.json:",
+                  "  # Step 3: Add both values to your plugin config in openclaw.json:",
+                  '  #   plugins.entries.pine-voice.config.user_id = "<USER_ID>"',
                   '  #   plugins.entries.pine-voice.config.access_token = "<TOKEN>"',
                   "",
                   "  # Step 4: Restart the gateway",
@@ -69,7 +70,7 @@ export function registerVoiceCallTool(api: any) {
         }
 
         const gatewayUrl = config.gateway_url || "https://api-dev.pineclaw.com";
-        const client = new PineMCPClient(gatewayUrl, config.access_token);
+        const client = new PineMCPClient(gatewayUrl, config.access_token, config.user_id);
 
         try {
           // 1. Initialize MCP session
@@ -137,7 +138,7 @@ export function registerVoiceCallTool(api: any) {
                     "  openclaw pine-voice auth setup --email <USER_EMAIL>",
                     "  openclaw pine-voice auth verify --email <USER_EMAIL> --code <CODE>",
                     "",
-                    "Then update the access_token in openclaw.json and restart the gateway.",
+                    "Then update user_id and access_token in openclaw.json and restart the gateway.",
                     "Ask the user for their Pine AI account email to begin.",
                   ].join("\n"),
                 },
