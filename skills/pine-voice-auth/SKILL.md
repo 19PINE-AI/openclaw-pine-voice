@@ -38,7 +38,7 @@ Pine Voice uses email-based verification. The flow has two API calls with a huma
 
 1. **Request** — send the user's email to get a `request_token`
 2. **Wait** — user checks their email for a verification code
-3. **Verify** — send email + code + request_token to get a `user_id` and `access_token`
+3. **Verify** — send email + request_token + code to get a `user_id` and `access_token`
 4. **Store** — write both values to the plugin config file
 5. **Restart** — restart the gateway to pick up the new config
 6. **Test** — make a test call to verify everything works
@@ -81,12 +81,12 @@ Wait for the user to provide the code. Do not guess or skip this step.
 
 ### Step 4: Verify the code and obtain the access token
 
-Run this command, replacing `USER_EMAIL`, `THE_CODE`, and `THE_REQUEST_TOKEN` with the actual values:
+Run this command, replacing `USER_EMAIL`, `THE_REQUEST_TOKEN`, and `THE_CODE` with the actual values:
 
 ```bash
 curl -s -X POST https://www.19pine.ai/api/v2/auth/email/verify \
   -H "Content-Type: application/json" \
-  -d '{"email": "USER_EMAIL", "code": "THE_CODE", "request_token": "THE_REQUEST_TOKEN"}' | jq .
+  -d '{"email": "USER_EMAIL", "request_token": "THE_REQUEST_TOKEN", "code": "THE_CODE"}' | jq .
 ```
 
 **Expected response:**
