@@ -69,7 +69,7 @@ export function registerVoiceCallTool(api: any) {
           };
         }
 
-        const gatewayUrl = config.gateway_url || "https://api-dev.pineclaw.com";
+        const gatewayUrl = config.gateway_url || "https://agent3-api-gateway-staging.19pine.ai";
         const client = new PineMCPClient(gatewayUrl, config.access_token, config.user_id);
 
         try {

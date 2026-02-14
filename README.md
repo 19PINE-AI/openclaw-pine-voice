@@ -93,8 +93,6 @@ openclaw pine-voice auth verify --email you@example.com --code 1234
 
 The command prints your access token. Add it to your plugin config in `openclaw.json`:
 
-**For local development** (default — no `gateway_url` needed, or set explicitly):
-
 ```json
 {
   "plugins": {
@@ -102,25 +100,6 @@ The command prints your access token. Add it to your plugin config in `openclaw.
       "pine-voice": {
         "enabled": true,
         "config": {
-          "gateway_url": "https://api-dev.pineclaw.com",
-          "access_token": "PASTE_YOUR_TOKEN_HERE"
-        }
-      }
-    }
-  }
-}
-```
-
-**For staging / production**, point to the production gateway:
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "pine-voice": {
-        "enabled": true,
-        "config": {
-          "gateway_url": "https://agent3-api-gateway.19pine.ai",
           "access_token": "PASTE_YOUR_TOKEN_HERE"
         }
       }

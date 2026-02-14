@@ -107,8 +107,6 @@ Save **both** values:
 
 Read the existing `~/.openclaw/openclaw.json` (or the config file at `$OPENCLAW_CONFIG_PATH`), then set both `plugins.entries.pine-voice.config.user_id` and `plugins.entries.pine-voice.config.access_token`. If the `pine-voice` entry doesn't exist, create it:
 
-**For local development** (default):
-
 ```json
 {
   "plugins": {
@@ -116,26 +114,6 @@ Read the existing `~/.openclaw/openclaw.json` (or the config file at `$OPENCLAW_
       "pine-voice": {
         "enabled": true,
         "config": {
-          "gateway_url": "https://api-dev.pineclaw.com",
-          "user_id": "THE_USER_ID",
-          "access_token": "THE_ACCESS_TOKEN"
-        }
-      }
-    }
-  }
-}
-```
-
-**For staging / production**, use the staging gateway:
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "pine-voice": {
-        "enabled": true,
-        "config": {
-          "gateway_url": "https://agent3-api-gateway-staging.19pine.ai",
           "user_id": "THE_USER_ID",
           "access_token": "THE_ACCESS_TOKEN"
         }

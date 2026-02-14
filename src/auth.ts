@@ -15,9 +15,10 @@ export function registerAuthCommands(api: any) {
   api.registerCli?.(
     ({ program }: any) => {
       const pineVoice = program.command("pine-voice").description("Pine AI Voice Call plugin");
+      const auth = pineVoice.command("auth").description("Pine AI authentication");
 
-      pineVoice
-        .command("auth setup")
+      auth
+        .command("setup")
         .description("Set up Pine AI authentication")
         .option("--email <email>", "Your Pine AI account email")
         .action(async (opts: any) => {
@@ -55,8 +56,8 @@ export function registerAuthCommands(api: any) {
           }
         });
 
-      pineVoice
-        .command("auth verify")
+      auth
+        .command("verify")
         .description("Verify email code and get access token")
         .option("--email <email>", "Your Pine AI account email")
         .option("--code <code>", "Verification code from email")
