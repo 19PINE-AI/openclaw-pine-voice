@@ -23,7 +23,7 @@ Do **not** use this skill for making phone calls — see the `pine-voice` skill 
 
 ## Prerequisites
 
-- The user must have a **Pine AI account** with a Pro subscription (sign up at https://pine.ai)
+- The user must have a **Pine AI account** with a Pro subscription (sign up at https://19pine.ai)
 - `curl` and `jq` must be available in the shell
 
 ## Important: email verification requires user presence
@@ -69,7 +69,7 @@ curl -s -X POST https://www.19pine.ai/api/v2/auth/email/request \
 Save the `request_token` value — you need it in step 4.
 
 **If the request fails:**
-- `400` or `422` — the email may not be registered. Ask the user to check their email or sign up at https://pine.ai.
+- `400` or `422` — the email may not be registered. Ask the user to check their email or sign up at https://19pine.ai.
 - Network error — check connectivity and retry.
 
 ### Step 3: Ask the user for the verification code

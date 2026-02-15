@@ -22,7 +22,7 @@ const AUTH_MISSING_MESSAGE = [
   "  # Step 4: Restart the gateway",
   "  openclaw gateway restart",
   "",
-  "Ask the user for their Pine AI account email to begin. If they don't have a Pine AI account, they can sign up at https://pine.ai.",
+  "Ask the user for their Pine AI account email to begin. If they don't have a Pine AI account, they can sign up at https://19pine.ai.",
 ].join("\n");
 
 const AUTH_EXPIRED_MESSAGE = [

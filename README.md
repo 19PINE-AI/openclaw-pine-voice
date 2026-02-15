@@ -2,7 +2,7 @@
 
 Make phone calls via Pine AI's voice agent from OpenClaw. The AI agent calls the specified number, carries out the conversation based on your instructions, and returns a full transcript (and an optional LLM-generated summary if requested). The voice agent can only speak English.
 
-**Powered by [Pine AI](https://pine.ai). Subject to [Pine AI Voice Terms of Service](https://pine.ai/legal/voice-tos).**
+**Powered by [Pine AI](https://19pine.ai). Subject to [Pine AI Voice Terms of Service](https://19pine.ai/legal/voice-tos).**
 
 ## How is this different from the built-in voice-call plugin?
 
@@ -16,7 +16,7 @@ Make phone calls via Pine AI's voice agent from OpenClaw. The AI agent calls the
 
 ## Prerequisites
 
-- Pine AI Pro subscription ([pine.ai](https://pine.ai))
+- Pine AI Pro subscription ([19pine.ai](https://19pine.ai))
 
 ## Install
 
@@ -194,7 +194,7 @@ When using `pine_voice_call` + `pine_voice_call_status` (manual):
 | Error | Cause | Fix |
 |---|---|---|
 | TOKEN_EXPIRED | Access token expired | Re-run `openclaw pine-voice auth setup` |
-| SUBSCRIPTION_REQUIRED | Not a Pro subscriber | Subscribe at pine.ai |
+| SUBSCRIPTION_REQUIRED | Not a Pro subscriber | Subscribe at 19pine.ai |
 | RATE_LIMITED | Too many calls | Wait and try again |
 | INSUFFICIENT_DETAIL | Objective too vague | Provide a more specific call objective |
 | DND_BLOCKED | Number on do-not-call list | Cannot call this number |
@@ -282,7 +282,7 @@ openclaw gateway restart
 
 ## Terms of Service
 
-This plugin connects to Pine AI's voice calling service. Pine AI is the service provider. All calls are recorded and transcribed. By using this plugin, you agree to [Pine AI's Voice Terms of Service](https://pine.ai/legal/voice-tos).
+This plugin connects to Pine AI's voice calling service. Pine AI is the service provider. All calls are recorded and transcribed. By using this plugin, you agree to [Pine AI's Voice Terms of Service](https://19pine.ai/legal/voice-tos).
 
 ## License
 
