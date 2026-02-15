@@ -148,10 +148,12 @@ export function registerVoiceCallTools(api: any) {
       description:
         "Check the status of a phone call initiated by pine_voice_call. " +
         "Returns the current status, call phase, and partial transcript while in progress. " +
-        "When the call is complete, returns the full transcript and " +
-        "triage result (plus an LLM-generated summary if enable_summary was set to true). " +
-        "Poll this tool every 30 seconds after initiating a call until the status is " +
-        "terminal (completed, failed, or cancelled). Powered by Pine AI.",
+        "When the call is complete, returns the full transcript (plus an LLM-generated summary if enable_summary was set to true). " +
+        "Poll this tool every 30 seconds after initiating a call until a transcript is present. " +
+        "CRITICAL: Do NOT rely on the status field to judge whether the call succeeded. " +
+        "You MUST read the full transcript — especially what the OTHER party said. " +
+        "If the other side was silent, responded with automated/voicemail messages, or never gave a meaningful human response, the call FAILED regardless of the technical status. " +
+        "Powered by Pine AI.",
       parameters: Type.Object({
         call_id: Type.String({ description: "The call_id returned by pine_voice_call" }),
       }),
@@ -301,7 +303,7 @@ function formatResult(result: CallResult) {
   const durationMin = Math.floor((result.durationSeconds || 0) / 60);
   const durationSec = (result.durationSeconds || 0) % 60;
   const lines = [
-    `**Call ${result.status}** (${result.triageCategory})`,
+    `**Call ${result.status}**`,
     `Duration: ${durationMin}m ${durationSec}s | Credits charged: ${result.creditsCharged}`,
   ];
   if (result.summary) {

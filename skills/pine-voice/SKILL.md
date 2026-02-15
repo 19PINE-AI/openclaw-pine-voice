@@ -47,11 +47,27 @@ If `pine_voice_call_and_wait` is not available, use `pine_voice_call` to initiat
 After spawning, tell the user that **the call is already active** — Pine's voice agent has dialed the number and is handling the conversation in the background. The call is NOT "connecting" or "being set up". Example:
 > "The call is now active — Pine's voice agent is on the line with [callee] handling the conversation in the background. This typically takes a few minutes. I'll let you know the results when it's done. Feel free to ask me anything else in the meantime."
 
-### Step 4: Summarize the result
+### Step 4: Evaluate the transcript and summarize the result
 
-When the sub-agent announces the result, summarize the transcript and outcome for the user. Include:
-- Whether the objective was achieved
-- Key details from the conversation
+When the sub-agent announces the result, you MUST read the full transcript carefully to determine the actual outcome. **Do NOT rely on the `status` field** — a status like `HungupByPeer` only means the other party hung up, not that the call succeeded.
+
+**How to evaluate the transcript:**
+
+Read what the OTHER party (not Pine's agent) actually said. The callee's responses are the only way to know if the objective was achieved.
+
+**Treat the call as a FAILURE if:**
+- Only Pine's agent speaks and the other side is silent or gives no meaningful response
+- The other party's responses are automated/recorded messages (e.g. voicemail greetings, "leave a message after the beep", "your call cannot be completed as dialed")
+- System messages report extended silence from both sides (e.g. "silence from both sides for 25 seconds")
+- The callee hung up before the objective could be discussed
+- The callee never acknowledged or responded to the request
+
+These patterns mean the call reached voicemail, an automated system, or the callee was unavailable. Report this honestly to the user.
+
+**Summarize for the user:**
+- Whether the objective was actually achieved (based on the transcript, not the status)
+- If it failed: why (voicemail, no answer, hung up, etc.) and suggest a retry or alternative
+- Key details from what the callee actually said
 - Any follow-up actions needed
 - Credits charged
 
@@ -74,7 +90,9 @@ Initiates a phone call and blocks until it completes, returning the full result 
 Initiates a phone call and returns immediately with a `call_id`. At this point, the call is ALREADY ACTIVE — the voice agent has dialed and is on the line. Same parameters as `pine_voice_call_and_wait`. Use with `pine_voice_call_status` to poll for results.
 
 ### pine_voice_call_status (poll)
-Checks call progress using the `call_id` from pine_voice_call. Poll every 30 seconds until the status is terminal (`completed`, `failed`, or `cancelled`). When the status is `in_progress`, the voice agent is ACTIVELY on the call speaking with the callee — it is NOT connecting or waiting. Returns the current phase and partial transcript while in progress, and full transcript and billing info when complete (plus summary if `enable_summary` was set to true).
+Checks call progress using the `call_id` from pine_voice_call. Poll every 30 seconds until a transcript is present in the response. When the status is `in_progress`, the voice agent is ACTIVELY on the call speaking with the callee — it is NOT connecting or waiting. Returns the current phase and partial transcript while in progress, and full transcript and billing info when complete (plus summary if `enable_summary` was set to true).
+
+**CRITICAL:** When you receive the final result, do NOT assume the call succeeded just because the status says "completed" or "HungupByPeer". You MUST read the full transcript. If the other party never responded meaningfully (voicemail, silence, automated messages), the call failed.
 
 - `call_id` (required): The call_id returned by pine_voice_call
 
