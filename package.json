@@ -2,30 +2,47 @@
   "name": "openclaw-pine-voice",
   "version": "0.1.0",
   "description": "Make phone calls via Pine AI voice agent from OpenClaw",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "openclaw": {
-    "extensions": ["./dist/index.js"]
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "files": ["dist", "openclaw.plugin.json", "skills", "README.md", "LICENSE"],
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["openclaw", "plugin", "voice", "phone", "pine"],
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "voice",
+    "phone",
+    "pine"
+  ],
   "author": "Pine AI",
   "license": "MIT",
   "homepage": "https://pineclaw.com",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/pine-ai/openclaw-pine-voice.git"
-  },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "pine-voice": "^0.1.0",
-    "@sinclair/typebox": "^0.32.0"
+    "@sinclair/typebox": "^0.32.0",
+    "pine-voice": "^0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

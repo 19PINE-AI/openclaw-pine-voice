@@ -5,7 +5,7 @@
  * Delegates to the pine-voice SDK for actual API calls.
  */
 
-import { PineVoice, AuthError } from "pine-voice";
+import { PineVoice } from "pine-voice";
 
 export function registerAuthCommands(api: any) {
   api.registerCli?.(
