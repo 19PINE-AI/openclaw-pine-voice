@@ -158,7 +158,7 @@ The exact requirements vary depending on the type of call — anticipate what th
 ## Limits and pricing
 
 - Each call costs **50 base credits + 20 credits per minute** of duration
-- 5 calls per day to the same number, 5 concurrent calls
+- 10 calls per day to the same number, 5 concurrent calls
 - Pro subscription required
 - MCP voice calls use your existing Pine AI credit balance. All credit sources apply — daily login rewards (300 credits/day), subscription plan credits, and purchased add-ons. Credit policies are governed by the Pine AI app. See [Pine AI Pricing FAQ](https://www.19pine.ai/pricing-faqs) for details.
 
