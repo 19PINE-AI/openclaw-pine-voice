@@ -108,9 +108,9 @@ The command prints your access token. Add it to your plugin config in `openclaw.
   "plugins": {
     "entries": {
       "pine-voice": {
-        "enabled": true,
         "config": {
-          "access_token": "PASTE_YOUR_TOKEN_HERE"
+          "access_token": "PASTE_YOUR_TOKEN_HERE",
+          "user_id": "PASTE_YOUR_USER_ID_HERE"
         }
       }
     }
