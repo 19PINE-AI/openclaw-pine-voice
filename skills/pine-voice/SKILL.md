@@ -74,9 +74,15 @@ Initiates a phone call and blocks until it completes, returning the full result 
 Initiates a phone call and returns immediately with a `call_id`. At this point, the call is ALREADY ACTIVE — the voice agent has dialed and is on the line. Same parameters as `pine_voice_call_and_wait`. Use with `pine_voice_call_status` to poll for results.
 
 ### pine_voice_call_status (poll)
-Checks call progress using the `call_id` from pine_voice_call. Poll every 30 seconds until the status is terminal (`completed`, `failed`, or `cancelled`). When the status is `in_progress`, the voice agent is ACTIVELY on the call speaking with the callee — it is NOT connecting or waiting. Returns full transcript and billing info when complete (plus summary if `enable_summary` was set to true).
+Checks call progress using the `call_id` from pine_voice_call. Poll every 30 seconds until the status is terminal (`completed`, `failed`, or `cancelled`). When the status is `in_progress`, the voice agent is ACTIVELY on the call speaking with the callee — it is NOT connecting or waiting. Returns the current phase and partial transcript while in progress, and full transcript and billing info when complete (plus summary if `enable_summary` was set to true).
 
 - `call_id` (required): The call_id returned by pine_voice_call
+
+**Real-time progress:** When the call is in progress, the status response now includes:
+- `phase`: "initiated" (dialing) or "connected" (callee answered, conversation active)
+- `partial_transcript`: Live transcript turns as the conversation progresses
+
+When the phase shows "connected", tell the user: "The callee has answered. Pine's voice agent is now in conversation." If partial transcript turns are available, you can share key points with the user.
 
 ## Negotiation calls
 For calls involving negotiation (bill reduction, rate matching, fee waiver), provide a **thorough negotiation strategy**, not just a target:

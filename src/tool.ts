@@ -131,7 +131,6 @@ export function registerVoiceCallTools(api: any) {
                 text: `Call initiated (call_id: ${callId}).\n\nUse pine_voice_call_status with call_id "${callId}" to check progress. Poll every 30 seconds until the call completes.`,
               },
             ],
-            structuredContent: { call_id: callId, status: "initiated" },
             isError: false,
           };
         } catch (err: unknown) {
@@ -148,7 +147,8 @@ export function registerVoiceCallTools(api: any) {
       name: "pine_voice_call_status",
       description:
         "Check the status of a phone call initiated by pine_voice_call. " +
-        "Returns the current status and, when the call is complete, the full transcript and " +
+        "Returns the current status, call phase, and partial transcript while in progress. " +
+        "When the call is complete, returns the full transcript and " +
         "triage result (plus an LLM-generated summary if enable_summary was set to true). " +
         "Poll this tool every 30 seconds after initiating a call until the status is " +
         "terminal (completed, failed, or cancelled). Powered by Pine AI.",
@@ -167,16 +167,38 @@ export function registerVoiceCallTools(api: any) {
             return formatResult(result as CallResult);
           }
 
-          // Non-terminal: return progress message
+          // Non-terminal: return progress message with phase & partial transcript when available
           const elapsed = result.durationSeconds ? formatDuration(result.durationSeconds) : "unknown";
+          const resultAny = result as any;
+          const phase: string | undefined = resultAny.phase;
+          const partialTranscript: Array<{ speaker: string; text: string }> | undefined =
+            resultAny.partialTranscript ?? resultAny.partial_transcript;
+
+          const progressLines: string[] = [];
+
+          if (phase === "connected") {
+            progressLines.push("Call connected — Pine's voice agent is speaking with the callee.");
+          } else if (phase) {
+            progressLines.push(`Call phase: ${phase} (${elapsed} elapsed).`);
+          } else {
+            progressLines.push(`Call is still in progress (${elapsed} elapsed).`);
+          }
+
+          if (partialTranscript && partialTranscript.length > 0) {
+            const recentTurns = partialTranscript.slice(-3);
+            const formatted = recentTurns.map((t) => `[${t.speaker}] ${t.text}`).join(" ");
+            progressLines.push("", `Recent transcript: ${formatted}`);
+          }
+
+          progressLines.push("", "Call again in 30 seconds to check status.");
+
           return {
             content: [
               {
                 type: "text",
-                text: `Call is still in progress (${elapsed} elapsed).\n\nCall again in 30 seconds to check status.`,
+                text: progressLines.join("\n"),
               },
             ],
-            structuredContent: { call_id: params.call_id, status: result.status || "in_progress" },
             isError: false,
           };
         } catch (err: unknown) {
@@ -252,12 +274,19 @@ export function registerVoiceCallTools(api: any) {
   );
 }
 
-/** Format a CallResult into an OpenClaw tool response. */
+/**
+ * Format a CallResult into an OpenClaw tool response.
+ *
+ * NOTE: We intentionally do NOT include structuredContent here because
+ * these tools have no outputSchema. Per MCP spec 2025-03-26, returning
+ * structuredContent without a corresponding outputSchema is a protocol
+ * violation and causes schema validation errors in strict MCP clients
+ * (e.g., Claude). All relevant data is included in the text content.
+ */
 function formatResult(result: CallResult) {
   if (result.status === "failed") {
     return {
       content: [{ type: "text", text: `Call failed: ${result.summary || "Unknown error"}` }],
-      structuredContent: result,
       isError: true,
     };
   }
@@ -265,7 +294,6 @@ function formatResult(result: CallResult) {
   if (result.status === "cancelled") {
     return {
       content: [{ type: "text", text: "Call was cancelled." }],
-      structuredContent: result,
       isError: false,
     };
   }
@@ -289,7 +317,6 @@ function formatResult(result: CallResult) {
 
   return {
     content: [{ type: "text", text: lines.join("\n") }],
-    structuredContent: result,
     isError: false,
   };
 }
