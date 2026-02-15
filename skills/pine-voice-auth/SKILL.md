@@ -104,7 +104,7 @@ Save **both** values:
 
 ### Step 5: Store the credentials and restart
 
-Use `openclaw config set` to write both values. Replace `THE_ACCESS_TOKEN` and `THE_USER_ID` with the actual values from step 4.
+Use `openclaw config set` to write both values to the OpenClaw config file (`~/.openclaw/openclaw.json`). Replace `THE_ACCESS_TOKEN` and `THE_USER_ID` with the actual values from step 4.
 
 **Important:** The user ID is all digits, so the CLI will parse it as a number unless you force it to be a JSON string with `--json` and explicit quotes.
 
@@ -119,6 +119,8 @@ You can verify the stored values with:
 ```bash
 openclaw config get plugins.entries.pine-voice.config
 ```
+
+**Note:** The config file is located at `~/.openclaw/openclaw.json`. The `plugins.entries.pine-voice.config` section should contain both `access_token` and `user_id`. The gateway **must be restarted** after updating the config for the new credentials to take effect.
 
 ### Step 6: Verify with a test call
 

@@ -1,7 +1,7 @@
 {
   "id": "openclaw-pine-voice",
   "name": "Pine AI Voice Call",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Make phone calls via Pine AI voice agent. The AI agent calls the specified number and carries out the conversation based on your instructions. The voice agent can only speak English, so calls can only be delivered to English-speaking countries. Before calling, gather all information the callee may need for authentication and verification — the agent cannot ask a human for missing info mid-call. Returns the full transcript. Powered by Pine AI.",
   "configSchema": {
     "type": "object",
