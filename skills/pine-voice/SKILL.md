@@ -59,6 +59,7 @@ Initiates a phone call and returns immediately with a `call_id`. Parameters:
 - `callee_context` (required): Comprehensive context — include all authentication, verification, and payment info the agent may need during the call
 - `objective` (required): Specific goal with negotiation targets and constraints if applicable
 - `instructions` (optional): Detailed strategy, approach, and behavioral instructions
+- `caller` (optional): "negotiator" or "communicator". Negotiator requires a thorough negotiation strategy in context/instructions (target outcome, acceptable range, leverage points, fallback positions). Communicator is for general-purpose routine tasks.
 - `voice` (optional): "male" or "female"
 - `max_duration_minutes` (optional): 1-120, default 120
 

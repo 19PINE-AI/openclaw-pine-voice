@@ -141,6 +141,15 @@ Then try real tasks:
 
 The voice agent can only speak English. Calls can only be placed to phone numbers in English-speaking countries (e.g., US, UK, Canada, Australia) and to recipients who understand English.
 
+### Caller personality
+
+The plugin supports two caller personalities:
+
+- **Negotiator** (`caller: "negotiator"`): For complex negotiations like bill reductions, insurance claims, and formal business matters. **You must provide a thorough negotiation strategy** in the context and instructions — including target outcome, acceptable range, leverage points, fallback positions, and constraints. The negotiator agent thinks things through deliberately and confirms important details multiple times.
+- **Communicator** (`caller: "communicator"`): For general-purpose routine tasks like scheduling appointments, making reservations, and inquiries. A specific objective is sufficient — no elaborate strategy needed.
+
+If not specified, the caller defaults to "negotiator".
+
 ### Important: Gather all required information first
 
 The voice agent **cannot ask a human for missing information mid-call**. There is no way for the AI to pause and request details during the conversation. Before making a call, make sure you have gathered all information the callee may need, including any authentication, verification, or payment details relevant to the task.

@@ -93,6 +93,7 @@ export function registerVoiceCallTools(api: any) {
         instructions: Type.Optional(
           Type.String({ description: "Detailed strategy and instructions for the voice agent. For negotiations, describe: what leverage points to use, what offers to accept/reject, fallback positions, and when to walk away. The more thorough the strategy, the better the outcome." }),
         ),
+        caller: Type.Optional(Type.String({ enum: ["negotiator", "communicator"], description: "Caller personality. 'negotiator' for complex negotiations — requires a thorough negotiation strategy in callee_context and instructions (target outcome, acceptable range, leverage points, fallback positions, walk-away conditions). 'communicator' for general-purpose routine tasks (scheduling, inquiries, reservations)." })),
         voice: Type.Optional(Type.String({ enum: ["male", "female"], description: "Voice gender" })),
         max_duration_minutes: Type.Optional(
           Type.Number({ default: 120, minimum: 1, maximum: 120, description: "Maximum call duration in minutes" }),
@@ -109,6 +110,7 @@ export function registerVoiceCallTools(api: any) {
             context: params.callee_context,
             objective: params.objective,
             instructions: params.instructions,
+            caller: params.caller,
             voice: params.voice,
             maxDurationMinutes: params.max_duration_minutes,
           });
