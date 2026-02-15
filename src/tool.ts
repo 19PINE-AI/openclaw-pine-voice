@@ -63,9 +63,12 @@ function handleError(api: any, err: unknown): ToolError {
 }
 
 /**
- * Register pine_voice_call and pine_voice_call_status tools with OpenClaw.
- * Both tools are optional (user must add them to tools.allow).
+ * Register voice call tools with OpenClaw:
+ *  - pine_voice_call: initiate a call (returns immediately)
+ *  - pine_voice_call_status: poll a call's status
+ *  - pine_voice_call_and_wait: initiate + block until complete (SSE + polling fallback)
  *
+ * All tools are optional (user must add them to tools.allow).
  * Delegates all API calls to the pine-voice SDK.
  */
 export function registerVoiceCallTools(api: any) {
@@ -98,6 +101,9 @@ export function registerVoiceCallTools(api: any) {
         max_duration_minutes: Type.Optional(
           Type.Number({ default: 120, minimum: 1, maximum: 120, description: "Maximum call duration in minutes" }),
         ),
+        enable_summary: Type.Optional(
+          Type.Boolean({ default: false, description: "Request an LLM-generated summary after the call. Default: false. Most AI agents can process the full transcript directly, so the summary is opt-in to save latency and cost." }),
+        ),
       }),
       async execute(_toolCallId: string, params: any) {
         const clientOrErr = getClientOrError(api);
@@ -113,6 +119,7 @@ export function registerVoiceCallTools(api: any) {
             caller: params.caller,
             voice: params.voice,
             maxDurationMinutes: params.max_duration_minutes,
+            enableSummary: params.enable_summary,
           });
 
           api.log?.info?.(`pine-voice: call initiated, call_id=${callId}`);
@@ -141,8 +148,9 @@ export function registerVoiceCallTools(api: any) {
       name: "pine_voice_call_status",
       description:
         "Check the status of a phone call initiated by pine_voice_call. " +
-        "Returns the current status and, when the call is complete, the full transcript, summary, and " +
-        "triage result. Poll this tool every 30 seconds after initiating a call until the status is " +
+        "Returns the current status and, when the call is complete, the full transcript and " +
+        "triage result (plus an LLM-generated summary if enable_summary was set to true). " +
+        "Poll this tool every 30 seconds after initiating a call until the status is " +
         "terminal (completed, failed, or cancelled). Powered by Pine AI.",
       parameters: Type.Object({
         call_id: Type.String({ description: "The call_id returned by pine_voice_call" }),
@@ -178,6 +186,70 @@ export function registerVoiceCallTools(api: any) {
     },
     { optional: true },
   );
+
+  // --- Tool 3: pine_voice_call_and_wait (initiate + wait for result) ---
+  api.registerTool(
+    {
+      name: "pine_voice_call_and_wait",
+      description:
+        "Make a phone call via Pine AI voice agent and wait for the result. This is the PREFERRED tool " +
+        "for making calls — it blocks until the call completes and returns the full transcript " +
+        "in a single tool call. No manual polling needed. Uses real-time SSE streaming under the hood " +
+        "with automatic fallback to polling if SSE is unavailable. " +
+        "Important: the voice agent can only speak English, so calls can only be delivered to English-speaking " +
+        "countries and recipients who understand English. " +
+        "BEFORE calling this tool, you MUST gather from the user all information that may be needed during " +
+        "the call, including any authentication, verification, or payment details the callee may require. " +
+        "The voice agent has no way to contact a human for missing information mid-call — anticipate what " +
+        "the callee will ask for and include it upfront. " +
+        "For negotiations, include target outcome, acceptable range, constraints, and leverage points. " +
+        "Note: this tool blocks for the duration of the call (typically 1-30 minutes). " +
+        "Powered by Pine AI.",
+      parameters: Type.Object({
+        to: Type.String({ description: "Phone number to call (E.164 format, e.g. +14155551234). Must be a number in an English-speaking country, as the voice agent can only speak English." }),
+        callee_name: Type.String({ description: "Name of the person or business being called" }),
+        callee_context: Type.String({ description: "Comprehensive context about the callee and all information needed for the call. Include: who they are, your relationship, and any authentication, verification, or payment details the callee may require. The voice agent CANNOT ask a human for missing information mid-call, so you must anticipate what will be needed and include everything upfront." }),
+        objective: Type.String({ description: "Specific goal the call should accomplish. For negotiations, include your target outcome, acceptable range, and constraints (e.g. 'Negotiate monthly bill down to $50/mo, do not accept above $65/mo, do not change plan tier')." }),
+        instructions: Type.Optional(
+          Type.String({ description: "Detailed strategy and instructions for the voice agent. For negotiations, describe: what leverage points to use, what offers to accept/reject, fallback positions, and when to walk away. The more thorough the strategy, the better the outcome." }),
+        ),
+        caller: Type.Optional(Type.String({ enum: ["negotiator", "communicator"], description: "Caller personality. 'negotiator' for complex negotiations — requires a thorough negotiation strategy in callee_context and instructions (target outcome, acceptable range, leverage points, fallback positions, walk-away conditions). 'communicator' for general-purpose routine tasks (scheduling, inquiries, reservations)." })),
+        voice: Type.Optional(Type.String({ enum: ["male", "female"], description: "Voice gender" })),
+        max_duration_minutes: Type.Optional(
+          Type.Number({ default: 120, minimum: 1, maximum: 120, description: "Maximum call duration in minutes" }),
+        ),
+        enable_summary: Type.Optional(
+          Type.Boolean({ default: false, description: "Request an LLM-generated summary after the call. Default: false. Most AI agents can process the full transcript directly, so the summary is opt-in to save latency and cost." }),
+        ),
+      }),
+      async execute(_toolCallId: string, params: any) {
+        const clientOrErr = getClientOrError(api);
+        if (!(clientOrErr instanceof PineVoice)) return clientOrErr;
+
+        try {
+          api.log?.info?.(`pine-voice: initiating call and waiting for result...`);
+
+          const result = await clientOrErr.calls.createAndWait({
+            to: params.to,
+            name: params.callee_name,
+            context: params.callee_context,
+            objective: params.objective,
+            instructions: params.instructions,
+            caller: params.caller,
+            voice: params.voice,
+            maxDurationMinutes: params.max_duration_minutes,
+            enableSummary: params.enable_summary,
+          });
+
+          api.log?.info?.(`pine-voice: call completed, status=${result.status}`);
+          return formatResult(result);
+        } catch (err: unknown) {
+          return handleError(api, err);
+        }
+      },
+    },
+    { optional: true },
+  );
 }
 
 /** Format a CallResult into an OpenClaw tool response. */
@@ -203,9 +275,10 @@ function formatResult(result: CallResult) {
   const lines = [
     `**Call ${result.status}** (${result.triageCategory})`,
     `Duration: ${durationMin}m ${durationSec}s | Credits charged: ${result.creditsCharged}`,
-    "",
-    `**Summary:** ${result.summary}`,
   ];
+  if (result.summary) {
+    lines.push("", `**Summary:** ${result.summary}`);
+  }
 
   if (result.transcript?.length > 0) {
     lines.push("", "**Transcript:**");

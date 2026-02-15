@@ -15,8 +15,8 @@ metadata:
 Use this skill when **any** of these are true:
 
 - The user asks to set up Pine Voice, configure Pine AI, or authenticate for voice calls
-- A `pine_voice_call` invocation returns "Pine Voice is not authenticated yet"
-- A `pine_voice_call` invocation fails with `TOKEN_EXPIRED`, `UNAUTHORIZED`, or a 401 response
+- A `pine_voice_call` or `pine_voice_call_and_wait` invocation returns "Pine Voice is not authenticated yet"
+- A `pine_voice_call` or `pine_voice_call_and_wait` invocation fails with `TOKEN_EXPIRED`, `UNAUTHORIZED`, or a 401 response
 - The user says their Pine Voice token isn't working
 
 Do **not** use this skill for making phone calls — see the `pine-voice` skill for that.
@@ -126,7 +126,7 @@ After authentication is complete, suggest the user make a test call to their own
 
 "Would you like to test it? I can call your phone to confirm everything is working. Just tell me your phone number."
 
-Use the `pine_voice_call` tool with:
+Use the `pine_voice_call_and_wait` tool (or `pine_voice_call` if unavailable) with:
 - `to`: the user's phone number
 - `callee_name`: the user's name
 - `callee_context`: "This is a test call to verify Pine Voice setup."

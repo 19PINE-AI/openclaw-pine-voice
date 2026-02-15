@@ -1,6 +1,6 @@
 # Pine AI Voice Call - OpenClaw Plugin
 
-Make phone calls via Pine AI's voice agent from OpenClaw. The AI agent calls the specified number, carries out the conversation based on your instructions, and returns a transcript and summary. **The voice agent can only speak English, so calls can only be delivered to English-speaking countries.**
+Make phone calls via Pine AI's voice agent from OpenClaw. The AI agent calls the specified number, carries out the conversation based on your instructions, and returns a full transcript (and an optional LLM-generated summary if requested). The voice agent can only speak English.
 
 **Powered by [Pine AI](https://pine.ai). Subject to [Pine AI Voice Terms of Service](https://pine.ai/legal/voice-tos).**
 
@@ -36,17 +36,27 @@ Configuration has two parts: enabling the tool for your agent, and authenticatin
 
 ### Step 1: Enable the tool for your agent
 
-The `pine_voice_call` tool is registered as optional, which means your agent won't see it until you explicitly allow it. Add it to your agent's tool allowlist in `openclaw.json`:
+The plugin provides three tools (all registered as optional):
 
-**To enable for all agents globally**, add `pine_voice_call` to the top-level `tools.allow`:
+| Tool | Description |
+|---|---|
+| `pine_voice_call_and_wait` | **Recommended.** Initiates a call and blocks until it completes, returning the full transcript in one tool call. Uses SSE streaming for real-time delivery with automatic polling fallback. |
+| `pine_voice_call` | Initiates a call and returns immediately with a `call_id`. Use with `pine_voice_call_status` for manual polling. |
+| `pine_voice_call_status` | Checks the status of a call initiated by `pine_voice_call`. |
+
+Your agent won't see these tools until you explicitly allow them. Add them to your agent's tool allowlist in `openclaw.json`:
+
+**To enable for all agents globally**, add the tools to the top-level `tools.allow`:
 
 ```json
 {
   "tools": {
-    "allow": ["pine_voice_call"]
+    "allow": ["pine_voice_call_and_wait"]
   }
 }
 ```
+
+> **Tip:** `pine_voice_call_and_wait` is all most agents need. If you want the manual initiate+poll pattern as well, add `"pine_voice_call"` and `"pine_voice_call_status"` to the list.
 
 **To enable for a specific agent only**, add it under that agent's config in `agents.list`:
 
@@ -57,7 +67,7 @@ The `pine_voice_call` tool is registered as optional, which means your agent won
       {
         "id": "main",
         "tools": {
-          "allow": ["pine_voice_call"]
+          "allow": ["pine_voice_call_and_wait"]
         }
       }
     ]
@@ -65,7 +75,7 @@ The `pine_voice_call` tool is registered as optional, which means your agent won
 }
 ```
 
-> **Note:** If your agent already has a `tools.allow` list with other tools, just append `"pine_voice_call"` to the existing array. If you're using `tools.profile` (e.g., `"coding"` or `"messaging"`), adding `"pine_voice_call"` to `tools.allow` will make it available alongside your profile's default tools — the profile won't be overridden.
+> **Note:** If your agent already has a `tools.allow` list with other tools, just append the tool names to the existing array. If you're using `tools.profile` (e.g., `"coding"` or `"messaging"`), adding tools to `tools.allow` will make them available alongside your profile's default tools — the profile won't be overridden.
 
 ### Step 2: Restart the gateway
 
@@ -137,9 +147,9 @@ Then try real tasks:
 - "Phone the restaurant at +14155559876 to make a reservation for tonight at 7pm for 4 people"
 - "Call Comcast at +18001234567 and negotiate my bill down to $60/mo. My account is 1234567890, current plan is $89.99/mo. I've been a customer for 8 years. Don't change the plan tier."
 
-### Important: English-speaking countries only
+### Supported countries
 
-The voice agent can only speak English. Calls can only be placed to phone numbers in English-speaking countries (e.g., US, UK, Canada, Australia) and to recipients who understand English.
+The voice agent can only speak English. Calls can be placed to phone numbers in the following countries: US, Canada (+1), UK (+44), Australia (+61), New Zealand (+64), and Ireland (+353). Calls to numbers outside these country codes will be rejected.
 
 ### Caller personality
 
@@ -158,9 +168,17 @@ The exact requirements vary depending on the type of call — anticipate what th
 
 ## What happens
 
+When using `pine_voice_call_and_wait` (recommended):
+
 1. The tool sends your instructions to Pine's voice agent
-2. While the call is in progress, your agent is waiting for the result
-3. You receive the full transcript and a summary when done
+2. An SSE stream is opened for real-time status delivery (with automatic polling fallback)
+3. You receive the full transcript (and an optional summary if requested) as soon as the call completes
+
+When using `pine_voice_call` + `pine_voice_call_status` (manual):
+
+1. The tool sends your instructions and returns a `call_id` immediately
+2. Your agent polls `pine_voice_call_status` every 30 seconds
+3. You receive the full transcript once the status reaches a terminal state
 
 > **Note:** While a call is in progress, your agent is waiting for the result. If you need to do other tasks simultaneously, use OpenClaw's sub-agents (`sessions_spawn`) to run the call in a background session.
 
