@@ -83,7 +83,7 @@ Your agent won't see these tools until you explicitly allow them. Add them to yo
 openclaw gateway restart
 ```
 
-Your agent now has access to the `pine_voice_call` tool.
+Your agent now has access to the Pine Voice call tools.
 
 ### Step 3: Authenticate with Pine AI
 
