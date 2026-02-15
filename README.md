@@ -87,11 +87,25 @@ Your agent now has access to the Pine Voice call tools.
 
 ### Step 3: Authenticate with Pine AI
 
-You have two options for when to authenticate:
+**Option A: Just ask the agent (recommended)**
 
-**Option A: Authenticate now (recommended)**
+The easiest way to authenticate is to simply tell your agent:
 
-We recommend authenticating right after installation. The auth flow requires an email verification code, so it's best done while you're actively setting things up — not later when the agent tries to make a call (which could be at any time).
+> "Set up Pine Voice authentication"
+
+The agent will ask for your Pine AI email, send a verification code, ask you for the code, and save the credentials — all conversationally. It uses two built-in tools (`pine_voice_auth_request` and `pine_voice_auth_verify`) that handle the entire flow and write the credentials to `openclaw.json` automatically. After it's done, restart the gateway:
+
+```bash
+openclaw gateway restart
+```
+
+This also works on first use: if you skip authentication and later ask the agent to make a call, it will detect that credentials are missing and walk you through the same flow.
+
+> **Note:** The verification code arrives by email, so you need to be available to provide it. If the agent tries to make a call while you're away, it will be blocked until you complete verification.
+
+**Option B: Manual CLI setup**
+
+If you prefer to authenticate from the terminal:
 
 ```bash
 # 1. Request a verification code (sent to your Pine AI account email)
@@ -101,7 +115,7 @@ openclaw pine-voice auth setup --email you@example.com
 openclaw pine-voice auth verify --email you@example.com --request-token <TOKEN> --code 1234
 ```
 
-The command prints your access token. Add it to your plugin config in `openclaw.json`:
+The command prints your access token and user ID. Add them to your plugin config in `openclaw.json`:
 
 ```json
 {
@@ -118,17 +132,11 @@ The command prints your access token. Add it to your plugin config in `openclaw.
 }
 ```
 
-Then restart the gateway again:
+Then restart the gateway:
 
 ```bash
 openclaw gateway restart
 ```
-
-**Option B: Let the agent handle it on first use**
-
-If you skip authentication, the plugin still loads and the tool is visible to your agent. The first time the agent tries to make a call, it will receive an error explaining that authentication is needed. The agent will then guide you through the email verification flow — it will ask for your email, run the auth commands, and configure the token for you.
-
-This works, but keep in mind: the email verification code arrives in your inbox, so you need to be available to provide it. If the agent tries to make a call while you're away (e.g., in an automated workflow or overnight), it will be blocked until you complete verification.
 
 ## Try it out
 
@@ -195,7 +203,7 @@ When using `pine_voice_call` + `pine_voice_call_status` (manual):
 
 | Error | Cause | Fix |
 |---|---|---|
-| TOKEN_EXPIRED | Access token expired | Re-run `openclaw pine-voice auth setup` |
+| TOKEN_EXPIRED | Access token expired | Ask your agent to re-authenticate, or re-run `openclaw pine-voice auth setup` |
 | SUBSCRIPTION_REQUIRED | Not a Pro subscriber | Subscribe at 19pine.ai |
 | RATE_LIMITED | Too many calls | Wait and try again |
 | INSUFFICIENT_DETAIL | Objective too vague | Provide a more specific call objective |

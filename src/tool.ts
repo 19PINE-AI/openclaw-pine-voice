@@ -5,35 +5,14 @@ import type { PineVoiceConfig } from "./types.js";
 
 /** Auth error message returned when credentials are missing. */
 const AUTH_MISSING_MESSAGE = [
-  "Pine Voice is not authenticated yet. Both a user ID and access token are required before making calls.",
-  "",
-  "To set up authentication, run these commands in the terminal:",
-  "",
-  "  # Step 1: Request a verification code (sent to your Pine AI account email)",
-  "  openclaw pine-voice auth setup --email <USER_EMAIL>",
-  "",
-  "  # Step 2: Enter the code and request token from Step 1 to get your user ID and access token",
-  "  openclaw pine-voice auth verify --email <USER_EMAIL> --request-token <TOKEN> --code <CODE>",
-  "",
-  "  # Step 3: Add both values to your plugin config in openclaw.json:",
-  '  #   plugins.entries.openclaw-pine-voice.config.user_id = "<USER_ID>"',
-  '  #   plugins.entries.openclaw-pine-voice.config.access_token = "<TOKEN>"',
-  "",
-  "  # Step 4: Restart the gateway",
-  "  openclaw gateway restart",
-  "",
-  "Ask the user for their Pine AI account email to begin. If they don't have a Pine AI account, they can sign up at https://19pine.ai.",
+  "Pine Voice is not authenticated. To set up, use the pine_voice_auth_request tool",
+  "with the user's Pine AI email address. If they don't have an account, they can",
+  "sign up at https://19pine.ai.",
 ].join("\n");
 
 const AUTH_EXPIRED_MESSAGE = [
-  "Pine Voice authentication has expired or is invalid.",
-  "",
-  "To re-authenticate, run:",
-  "  openclaw pine-voice auth setup --email <USER_EMAIL>",
-  "  openclaw pine-voice auth verify --email <USER_EMAIL> --request-token <TOKEN> --code <CODE>",
-  "",
-  "Then update user_id and access_token in openclaw.json and restart the gateway.",
-  "Ask the user for their Pine AI account email to begin.",
+  "Pine Voice authentication has expired. Use pine_voice_auth_request with the",
+  "user's email to re-authenticate.",
 ].join("\n");
 
 type ToolError = { content: Array<{ type: string; text: string }>; isError: true };

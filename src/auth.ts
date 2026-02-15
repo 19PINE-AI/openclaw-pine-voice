@@ -1,11 +1,174 @@
 /**
  * Auth flow for Pine Voice plugin.
- * Registers CLI commands for email-based authentication.
+ *
+ * Provides two surfaces:
+ *  1. Tools (pine_voice_auth_request / pine_voice_auth_verify) — the primary,
+ *     conversational path where the AI agent drives the flow.
+ *  2. CLI commands (openclaw pine-voice auth setup/verify) — a manual fallback.
  *
  * Delegates to the pine-voice SDK for actual API calls.
  */
 
-import { PineVoice } from "pine-voice";
+import { Type } from "@sinclair/typebox";
+import { PineVoice, AuthError } from "pine-voice";
+
+// ---------------------------------------------------------------------------
+// Module-level state: stores requestToken between the request and verify steps
+// so the AI agent never needs to pass it explicitly.
+// ---------------------------------------------------------------------------
+const pendingAuth = new Map<string, string>(); // email → requestToken
+
+// ---------------------------------------------------------------------------
+// Tool registration (primary path)
+// ---------------------------------------------------------------------------
+
+export function registerAuthTools(api: any) {
+  // --- Tool: pine_voice_auth_request ---
+  api.registerTool({
+    name: "pine_voice_auth_request",
+    description:
+      "Start Pine Voice authentication. Sends a verification code to the user's " +
+      "Pine AI account email. After calling this, ask the user to check their email " +
+      "(including spam) and provide the code, then call pine_voice_auth_verify.",
+    parameters: Type.Object({
+      email: Type.String({ description: "The user's Pine AI account email address" }),
+    }),
+    async execute(_toolCallId: string, params: { email: string }) {
+      try {
+        const { requestToken } = await PineVoice.auth.requestCode(params.email);
+        pendingAuth.set(params.email, requestToken);
+
+        api.log?.info?.(`pine-voice: auth code requested for ${params.email}`);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `Verification code sent to ${params.email}. ` +
+                "Ask the user to check their email (including spam folder) and provide the code. " +
+                "Then call pine_voice_auth_verify with the email and code.",
+            },
+          ],
+          isError: false,
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        api.log?.error?.(`pine-voice: auth request failed: ${message}`);
+
+        const hint =
+          err instanceof AuthError && (err as any).status >= 400 && (err as any).status < 500
+            ? " The email may not be registered — the user can sign up at https://19pine.ai."
+            : "";
+
+        return {
+          content: [{ type: "text", text: `Pine Voice auth request failed: ${message}.${hint}` }],
+          isError: true,
+        };
+      }
+    },
+  });
+
+  // --- Tool: pine_voice_auth_verify ---
+  api.registerTool({
+    name: "pine_voice_auth_verify",
+    description:
+      "Complete Pine Voice authentication. Verifies the code the user received by email, " +
+      "saves the credentials to openclaw.json, and tells the user to restart the gateway. " +
+      "Must be called after pine_voice_auth_request.",
+    parameters: Type.Object({
+      email: Type.String({ description: "The same email used in pine_voice_auth_request" }),
+      code: Type.String({ description: "The verification code from the user's email" }),
+      request_token: Type.Optional(
+        Type.String({ description: "Request token from pine_voice_auth_request (usually not needed — resolved automatically)" }),
+      ),
+    }),
+    async execute(_toolCallId: string, params: { email: string; code: string; request_token?: string }) {
+      const requestToken = params.request_token || pendingAuth.get(params.email);
+
+      if (!requestToken) {
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                "No pending auth request found for this email. " +
+                "Call pine_voice_auth_request first to send a new verification code.",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      try {
+        const { accessToken, userId } = await PineVoice.auth.verifyCode(
+          params.email,
+          requestToken,
+          params.code,
+        );
+
+        // Write credentials to openclaw.json
+        const cfg = api.runtime.config.loadConfig();
+        const plugins = (cfg.plugins ?? {}) as Record<string, any>;
+        const entries = (plugins.entries ?? {}) as Record<string, any>;
+        const pluginEntry = (entries["openclaw-pine-voice"] ?? {}) as Record<string, any>;
+
+        const updatedConfig = {
+          ...cfg,
+          plugins: {
+            ...plugins,
+            entries: {
+              ...entries,
+              "openclaw-pine-voice": {
+                ...pluginEntry,
+                config: {
+                  ...(pluginEntry.config ?? {}),
+                  access_token: accessToken,
+                  user_id: userId,
+                },
+              },
+            },
+          },
+        };
+
+        await api.runtime.config.writeConfigFile(updatedConfig);
+        pendingAuth.delete(params.email);
+
+        api.log?.info?.(`pine-voice: auth successful for ${params.email}, credentials saved`);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                "Authentication successful! Credentials have been saved to openclaw.json. " +
+                "Tell the user to restart the gateway for the changes to take effect:\n\n" +
+                "  openclaw gateway restart",
+            },
+          ],
+          isError: false,
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        api.log?.error?.(`pine-voice: auth verify failed: ${message}`);
+
+        const isExpired = message.toLowerCase().includes("expired");
+        const hint = isExpired
+          ? " The request token has expired — call pine_voice_auth_request again to send a new code."
+          : " Ask the user to double-check the code and try again.";
+
+        return {
+          content: [{ type: "text", text: `Pine Voice auth verification failed: ${message}.${hint}` }],
+          isError: true,
+        };
+      }
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// CLI registration (manual fallback)
+// ---------------------------------------------------------------------------
 
 export function registerAuthCommands(api: any) {
   api.registerCli?.(

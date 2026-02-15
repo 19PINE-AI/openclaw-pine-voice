@@ -1,11 +1,8 @@
 ---
 name: pine-voice-auth
-description: Set up or refresh Pine Voice authentication. Obtains an access token via email verification and writes it to the plugin config.
+description: Set up or refresh Pine Voice authentication via the built-in auth tools.
 metadata:
-  {
-    "openclaw":
-      { "emoji": "🔑", "requires": { "bins": ["curl", "jq"] } },
-  }
+  { "openclaw": { "emoji": "🔑" } }
 ---
 
 # Pine Voice Auth Setup
@@ -15,7 +12,7 @@ metadata:
 Use this skill when **any** of these are true:
 
 - The user asks to set up Pine Voice, configure Pine AI, or authenticate for voice calls
-- A `pine_voice_call` or `pine_voice_call_and_wait` invocation returns "Pine Voice is not authenticated yet"
+- A `pine_voice_call` or `pine_voice_call_and_wait` invocation returns "Pine Voice is not authenticated"
 - A `pine_voice_call` or `pine_voice_call_and_wait` invocation fails with `TOKEN_EXPIRED`, `UNAUTHORIZED`, or a 401 response
 - The user says their Pine Voice token isn't working
 
@@ -24,23 +21,12 @@ Do **not** use this skill for making phone calls — see the `pine-voice` skill 
 ## Prerequisites
 
 - The user must have a **Pine AI account** with a Pro subscription (sign up at https://19pine.ai)
-- `curl` and `jq` must be available in the shell
 
 ## Important: email verification requires user presence
 
 This auth flow sends a verification code to the user's email inbox. The user **must be available** to check their email and tell you the code. This cannot be automated.
 
 **Recommended timing:** Run this flow right after plugin installation or when the user explicitly asks to set up Pine Voice — not during an unattended or automated workflow.
-
-## Auth flow overview
-
-Pine Voice uses email-based verification. The flow has two API calls with a human step in between:
-
-1. **Request** — send the user's email to get a `request_token`
-2. **Wait** — user checks their email for a verification code
-3. **Verify** — send email + request_token + code to get a `user_id` and `access_token`
-4. **Store & restart** — write both values via `openclaw config set` and restart the gateway
-5. **Test** — make a test call to verify everything works
 
 ## Step-by-step instructions
 
@@ -50,27 +36,15 @@ Ask: "What email address is your Pine AI account registered with?"
 
 Do not proceed until you have the email.
 
-### Step 2: Request a verification code
+### Step 2: Send a verification code
 
-Run this command, replacing `USER_EMAIL` with the email from step 1:
+Call the `pine_voice_auth_request` tool with the user's email:
 
-```bash
-curl -s -X POST https://www.19pine.ai/api/v2/auth/email/request \
-  -H "Content-Type: application/json" \
-  -d '{"email": "USER_EMAIL"}' | jq .
+```
+pine_voice_auth_request({ email: "user@example.com" })
 ```
 
-**Expected response:**
-
-```json
-{"status": "success", "data": {"request_token": "abc123..."}}
-```
-
-Save the `request_token` value — you need it in step 4.
-
-**If the request fails:**
-- `400` or `422` — the email may not be registered. Ask the user to check their email or sign up at https://19pine.ai.
-- Network error — check connectivity and retry.
+This sends a verification code to their email. If the request fails with a 400/422, the email may not be registered — ask the user to check their email or sign up at https://19pine.ai.
 
 ### Step 3: Ask the user for the verification code
 
@@ -78,53 +52,35 @@ Tell the user: "I've sent a verification code to your email. Please check your i
 
 Wait for the user to provide the code. Do not guess or skip this step.
 
-### Step 4: Verify the code and obtain the access token
+### Step 4: Verify the code and save credentials
 
-Run this command, replacing `USER_EMAIL`, `THE_REQUEST_TOKEN`, and `THE_CODE` with the actual values:
+Call the `pine_voice_auth_verify` tool with the email and code:
 
-```bash
-curl -s -X POST https://www.19pine.ai/api/v2/auth/email/verify \
-  -H "Content-Type: application/json" \
-  -d '{"email": "USER_EMAIL", "request_token": "THE_REQUEST_TOKEN", "code": "THE_CODE"}' | jq .
+```
+pine_voice_auth_verify({ email: "user@example.com", code: "123456" })
 ```
 
-**Expected response:**
-
-```json
-{"id": "1234567890", "access_token": "eyJ...", ...}
-```
-
-Save **both** values:
-- **`id`** — the user's Pine user ID
-- **`access_token`** — the access token
+The tool verifies the code, saves the credentials to `~/.openclaw/openclaw.json` automatically, and returns a success message.
 
 **If verification fails:**
-- `401` or `400` with "invalid code" — ask the user to double-check the code and try again.
-- `410` or "expired" — the request_token expired. Go back to step 2 to start over.
+- Invalid code — ask the user to double-check the code and try again (call `pine_voice_auth_verify` with the corrected code).
+- Expired token — go back to step 2 to send a new code.
 
-### Step 5: Store the credentials and restart
+### Step 5: Restart the gateway
 
-Use `openclaw config set` to write both values to the OpenClaw config file (`~/.openclaw/openclaw.json`). Replace `THE_ACCESS_TOKEN` and `THE_USER_ID` with the actual values from step 4.
+Tell the user to restart the gateway for the new credentials to take effect:
 
-**Important:** The user ID is all digits, so the CLI will parse it as a number unless you force it to be a JSON string with `--json` and explicit quotes.
+"Credentials saved! Please run this command to activate them:"
 
-```bash
-openclaw config set plugins.entries.openclaw-pine-voice.config.access_token "THE_ACCESS_TOKEN"
-openclaw config set plugins.entries.openclaw-pine-voice.config.user_id '"THE_USER_ID"' --json
+```
 openclaw gateway restart
 ```
 
-You can verify the stored values with:
-
-```bash
-openclaw config get plugins.entries.openclaw-pine-voice.config
-```
-
-**Note:** The config file is located at `~/.openclaw/openclaw.json`. The `plugins.entries.openclaw-pine-voice.config` section should contain both `access_token` and `user_id`. The gateway **must be restarted** after updating the config for the new credentials to take effect.
+The gateway **must be restarted** after authentication for the new credentials to take effect.
 
 ### Step 6: Verify with a test call
 
-After authentication is complete, suggest the user make a test call to their own phone number to verify everything works end-to-end:
+After the gateway has restarted, suggest the user make a test call to their own phone number to verify everything works end-to-end:
 
 "Would you like to test it? I can call your phone to confirm everything is working. Just tell me your phone number."
 
@@ -145,6 +101,6 @@ Access tokens expire periodically. When a call fails with `TOKEN_EXPIRED` or a 4
 
 ## Security notes
 
-- Never log or echo the access token in plaintext beyond what is needed to write the config file
+- Never log or echo the access token in plaintext beyond what is needed
 - The token is stored in a local config file with the same permissions as the user's home directory
 - Do not commit config files containing tokens to version control
