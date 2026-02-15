@@ -33,19 +33,19 @@ Use `sessions_spawn` to run the call in the background.
 - **tool**: `sessions_spawn`
 - **task**: Write a clear task that includes ALL call parameters. Example:
 
-  > Make a phone call using the pine_voice_call_and_wait tool. Call details: Call Comcast customer service at +18001234567. Callee name: Comcast Support. Callee context: Account holder Jane Doe, account #1234567890, current plan Performance Pro at $89.99/mo, 8-year customer. Objective: Negotiate monthly bill down to $60/mo, acceptable up to $70/mo. Do NOT change plan tier or remove features. If no monthly reduction, ask for one-time credit of $50. Last resort: ask for retention department. Instructions: Mention 8-year loyalty and that AT&T offers $55/mo for similar speed. When the call completes, report the full summary, transcript, and outcome.
+  > Make a phone call using the pine_voice_call_and_wait tool. Call details: Call the restaurant at +14155559876. Callee name: The Italian Place. Callee context: Italian restaurant on Main Street. Making a dinner reservation. Objective: Make a reservation for 4 people tonight at 7pm. Instructions: If 7pm is not available, try 7:30 or 8pm. Prefer a booth if possible. Name for the reservation: Jane Doe. When the call completes, report the full summary, transcript, and outcome.
 
-- **label**: Short description, e.g. `call-comcast-bill-negotiation`
+- **label**: Short description, e.g. `call-restaurant-reservation`
 - **runTimeoutSeconds**: `(max_duration_minutes + 5) * 60` — give extra buffer beyond the call's max duration
 
 **Alternative approach — `pine_voice_call` + `pine_voice_call_status` (manual polling):**
 
 If `pine_voice_call_and_wait` is not available, use `pine_voice_call` to initiate, then poll `pine_voice_call_status` every 30 seconds. Include polling instructions in the task description.
 
-### Step 3: Tell the user the call has started
+### Step 3: Tell the user the call is active
 
-After spawning, tell the user something like:
-> "I've started the call to Comcast in the background. I'll let you know the results when it's done. Feel free to ask me anything else in the meantime."
+After spawning, tell the user that **the call is already active** — Pine's voice agent has dialed the number and is handling the conversation in the background. The call is NOT "connecting" or "being set up". Example:
+> "The call is now active — Pine's voice agent is on the line with [callee] handling the conversation in the background. This typically takes a few minutes. I'll let you know the results when it's done. Feel free to ask me anything else in the meantime."
 
 ### Step 4: Summarize the result
 
@@ -71,10 +71,10 @@ Initiates a phone call and blocks until it completes, returning the full result 
 - `enable_summary` (optional): boolean, default false. Request an LLM-generated summary after the call. Most AI agents can process the full transcript directly, so the summary is opt-in.
 
 ### pine_voice_call (initiate)
-Initiates a phone call and returns immediately with a `call_id`. Same parameters as `pine_voice_call_and_wait`. Use with `pine_voice_call_status` to poll for results.
+Initiates a phone call and returns immediately with a `call_id`. At this point, the call is ALREADY ACTIVE — the voice agent has dialed and is on the line. Same parameters as `pine_voice_call_and_wait`. Use with `pine_voice_call_status` to poll for results.
 
 ### pine_voice_call_status (poll)
-Checks call progress using the `call_id` from pine_voice_call. Poll every 30 seconds until the status is terminal (`completed`, `failed`, or `cancelled`). Returns full transcript and billing info when complete (plus summary if `enable_summary` was set to true).
+Checks call progress using the `call_id` from pine_voice_call. Poll every 30 seconds until the status is terminal (`completed`, `failed`, or `cancelled`). When the status is `in_progress`, the voice agent is ACTIVELY on the call speaking with the callee — it is NOT connecting or waiting. Returns full transcript and billing info when complete (plus summary if `enable_summary` was set to true).
 
 - `call_id` (required): The call_id returned by pine_voice_call
 
@@ -90,11 +90,11 @@ For calls involving negotiation (bill reduction, rate matching, fee waiver), pro
 
 ## Examples
 
-**Simple scheduling:**
-"Call John Smith at Acme Corp (+14155551234) to schedule a 30-minute meeting for Tuesday afternoon. Mention that we want to discuss the Q3 partnership proposal."
+**Test call to yourself:**
+"Call my phone at +1XXXXXXXXXX. Tell me that Pine Voice is set up and working. Confirm the setup is complete and say goodbye."
 
-**Bill negotiation:**
-"Call Comcast customer service at +18001234567 to negotiate my internet bill down. Account number: 1234567890, account holder: Jane Doe, current plan: Performance Pro at $89.99/mo. Target: reduce to $60/mo. Acceptable: up to $70/mo. Leverage: I've been a customer for 8 years, competitor AT&T offers $55/mo for similar speed. Do NOT change the plan tier or remove any features. If they won't reduce the monthly rate, ask for a one-time credit of at least $50. Last resort: ask for the retention/loyalty department."
+**Restaurant reservation:**
+"Call the restaurant at +14155559876 and make a reservation for 4 people tonight at 7pm. If 7pm is not available, try 7:30 or 8pm. Name for the reservation: Jane Doe."
 
 ## HTTP API reference
 
