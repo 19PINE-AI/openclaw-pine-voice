@@ -9,8 +9,8 @@ import { registerAuthCommands } from "./auth.js";
  * - pine_voice_call_status tool (check call progress / get results)
  * - pine-voice CLI commands (auth setup/verify)
  *
- * The plugin makes direct HTTP calls to Pine's v2 REST API (POST to initiate,
- * GET to poll). All safety, billing, and prompt logic lives on Pine's side.
+ * Delegates all API calls to the pine-voice SDK. All safety, billing,
+ * and prompt logic lives on Pine's side.
  *
  * For non-blocking calls, the pine-voice skill instructs the AI to use
  * sessions_spawn so the main agent stays responsive during long calls.

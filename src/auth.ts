@@ -2,14 +2,10 @@
  * Auth flow for Pine Voice plugin.
  * Registers CLI commands for email-based authentication.
  *
- * Auth calls go directly to the Pine AI backend (www.19pine.ai),
- * not through the MCP gateway.
- *
- * Path A: openclaw pine-voice auth setup --email user@example.com
- * Path B: User pastes access_token directly into plugin config
+ * Delegates to the pine-voice SDK for actual API calls.
  */
 
-const PINE_AUTH_BASE_URL = "https://www.19pine.ai/api";
+import { PineVoice, AuthError } from "pine-voice";
 
 export function registerAuthCommands(api: any) {
   api.registerCli?.(
@@ -30,29 +26,13 @@ export function registerAuthCommands(api: any) {
           console.log(`Requesting verification code for ${opts.email}...`);
 
           try {
-            const resp = await fetch(`${PINE_AUTH_BASE_URL}/v2/auth/email/request`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email: opts.email }),
-            });
-
-            if (!resp.ok) {
-              const body = await resp.text();
-              console.error(`Failed: ${resp.status} ${body}`);
-              return;
-            }
-
-            const result = (await resp.json()) as { status: string; data?: { request_token?: string } };
-            const requestToken = result.data?.request_token;
+            const { requestToken } = await PineVoice.auth.requestCode(opts.email);
 
             console.log("Verification code sent! Check your email.");
-            if (requestToken) {
-              console.log(`Then run: openclaw pine-voice auth verify --email ${opts.email} --request-token ${requestToken} --code <code>`);
-            } else {
-              console.log(`Then run: openclaw pine-voice auth verify --email ${opts.email} --code <code>`);
-            }
-          } catch (err: any) {
-            console.error(`Error: ${err.message}`);
+            console.log(`Then run: openclaw pine-voice auth verify --email ${opts.email} --request-token ${requestToken} --code <code>`);
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.error(`Error: ${message}`);
           }
         });
 
@@ -63,45 +43,26 @@ export function registerAuthCommands(api: any) {
         .option("--request-token <token>", "Request token from auth setup step")
         .option("--code <code>", "Verification code from email")
         .action(async (opts: any) => {
-          if (!opts.code || !opts.email) {
+          if (!opts.code || !opts.email || !opts.requestToken) {
             console.log("Usage: openclaw pine-voice auth verify --email you@example.com --request-token <token> --code 1234");
             return;
           }
 
           try {
-            const body: Record<string, string> = { email: opts.email, code: opts.code };
-            if (opts.requestToken) {
-              body.request_token = opts.requestToken;
-            }
+            const { accessToken, userId } = await PineVoice.auth.verifyCode(
+              opts.email,
+              opts.requestToken || "",
+              opts.code,
+            );
 
-            const resp = await fetch(`${PINE_AUTH_BASE_URL}/v2/auth/email/verify`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-
-            if (!resp.ok) {
-              const respBody = await resp.text();
-              console.error(`Failed: ${resp.status} ${respBody}`);
-              return;
-            }
-
-            const result = (await resp.json()) as { status: string; data?: { access_token?: string; id?: string } };
-            const accessToken = result.data?.access_token;
-            const userId = result.data?.id;
-            if (accessToken) {
-              console.log("Authentication successful!");
-              console.log(`Add this to your pine-voice config:`);
-              console.log(`  access_token: "${accessToken}"`);
-              if (userId) {
-                console.log(`  user_id: "${userId}"`);
-              }
-              console.log("\nOr set it in openclaw.json under plugins.entries.pine-voice.config");
-            } else {
-              console.log("Verification succeeded but no token returned. Check the response.");
-            }
-          } catch (err: any) {
-            console.error(`Error: ${err.message}`);
+            console.log("Authentication successful!");
+            console.log(`Add this to your pine-voice config:`);
+            console.log(`  access_token: "${accessToken}"`);
+            console.log(`  user_id: "${userId}"`);
+            console.log("\nOr set it in openclaw.json under plugins.entries.pine-voice.config");
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.error(`Error: ${message}`);
           }
         });
     },

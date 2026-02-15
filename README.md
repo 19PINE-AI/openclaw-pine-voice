@@ -87,8 +87,8 @@ We recommend authenticating right after installation. The auth flow requires an 
 # 1. Request a verification code (sent to your Pine AI account email)
 openclaw pine-voice auth setup --email you@example.com
 
-# 2. Check your email for the code, then verify
-openclaw pine-voice auth verify --email you@example.com --code 1234
+# 2. Check your email for the code, then verify (use the request-token from setup output)
+openclaw pine-voice auth verify --email you@example.com --request-token <TOKEN> --code 1234
 ```
 
 The command prints your access token. Add it to your plugin config in `openclaw.json`:
@@ -249,7 +249,7 @@ npm publish
 Users update with:
 
 ```bash
-openclaw plugins update pine-voice
+openclaw plugins update openclaw-pine-voice
 openclaw gateway restart
 ```
 

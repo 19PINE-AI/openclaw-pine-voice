@@ -1,5 +1,7 @@
 import { Type } from "@sinclair/typebox";
-import type { PineVoiceConfig, CallResult } from "./types.js";
+import { PineVoice, AuthError } from "pine-voice";
+import type { CallResult } from "pine-voice";
+import type { PineVoiceConfig } from "./types.js";
 
 /** Auth error message returned when credentials are missing. */
 const AUTH_MISSING_MESSAGE = [
@@ -34,40 +36,37 @@ const AUTH_EXPIRED_MESSAGE = [
   "Ask the user for their Pine AI account email to begin.",
 ].join("\n");
 
-/** Read plugin config and build request headers. Returns error response if not authenticated. */
-function getConfigOrError(api: any): { gatewayUrl: string; headers: Record<string, string> } | { content: Array<{ type: string; text: string }>; isError: true } {
+type ToolError = { content: Array<{ type: string; text: string }>; isError: true };
+
+/** Read plugin config and create a PineVoice SDK client. Returns error response if not authenticated. */
+function getClientOrError(api: any): PineVoice | ToolError {
   const config = api.config?.plugins?.entries?.["pine-voice"]?.config as PineVoiceConfig | undefined;
   if (!config?.access_token || !config?.user_id) {
     return { content: [{ type: "text", text: AUTH_MISSING_MESSAGE }], isError: true };
   }
-  const gatewayUrl = (config.gateway_url || "https://agent3-api-gateway-staging.19pine.ai").replace(/\/$/, "");
-  return {
-    gatewayUrl,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.access_token}`,
-      "X-Pine-User-Id": config.user_id,
-    },
-  };
+  return new PineVoice({
+    accessToken: config.access_token,
+    userId: config.user_id,
+    gatewayUrl: config.gateway_url,
+  });
 }
 
-/** Detect auth errors and return a formatted error response. */
-function handleError(api: any, err: any) {
-  api.log?.error?.(`pine-voice: error: ${err.message}`);
-  const msg = err.message || "";
-  if (msg.includes("401") || msg.includes("TOKEN_EXPIRED") || msg.includes("Unauthorized")) {
+/** Convert a PineVoiceError into an OpenClaw tool error response. */
+function handleError(api: any, err: unknown): ToolError {
+  if (err instanceof AuthError) {
+    api.log?.error?.(`pine-voice: auth error: ${err.message}`);
     return { content: [{ type: "text", text: AUTH_EXPIRED_MESSAGE }], isError: true };
   }
-  return { content: [{ type: "text", text: `Pine Voice Call Error: ${err.message}` }], isError: true };
+  const message = err instanceof Error ? err.message : String(err);
+  api.log?.error?.(`pine-voice: error: ${message}`);
+  return { content: [{ type: "text", text: `Pine Voice Call Error: ${message}` }], isError: true };
 }
 
 /**
  * Register pine_voice_call and pine_voice_call_status tools with OpenClaw.
  * Both tools are optional (user must add them to tools.allow).
  *
- * Uses the v2 REST API (POST to initiate, GET to poll) rather than MCP JSON-RPC
- * for simplicity. The REST API shares the same Redis storage as MCP, so results
- * from either path are interchangeable.
+ * Delegates all API calls to the pine-voice SDK.
  */
 export function registerVoiceCallTools(api: any) {
   // --- Tool 1: pine_voice_call (initiate) ---
@@ -100,49 +99,33 @@ export function registerVoiceCallTools(api: any) {
         ),
       }),
       async execute(_toolCallId: string, params: any) {
-        const configOrErr = getConfigOrError(api);
-        if ("isError" in configOrErr) return configOrErr;
-        const { gatewayUrl, headers } = configOrErr;
+        const clientOrErr = getClientOrError(api);
+        if (!(clientOrErr instanceof PineVoice)) return clientOrErr;
 
         try {
-          const res = await fetch(`${gatewayUrl}/api/v2/voice/call`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              dialed_number: params.to,
-              callee_name: params.callee_name,
-              callee_context: params.callee_context,
-              call_objective: params.objective,
-              detailed_instructions: params.instructions || "",
-              voice: params.voice,
-              max_duration_minutes: params.max_duration_minutes ?? 120,
-            }),
+          const { callId } = await clientOrErr.calls.create({
+            to: params.to,
+            name: params.callee_name,
+            context: params.callee_context,
+            objective: params.objective,
+            instructions: params.instructions,
+            voice: params.voice,
+            maxDurationMinutes: params.max_duration_minutes,
           });
 
-          if (!res.ok) {
-            const body = await res.json().catch(() => null);
-            const errCode = body?.error?.code || "";
-            const errMsg = body?.error?.message || `HTTP ${res.status}`;
-            if (res.status === 401 || errCode === "TOKEN_EXPIRED") {
-              return { content: [{ type: "text", text: AUTH_EXPIRED_MESSAGE }], isError: true };
-            }
-            return { content: [{ type: "text", text: `Call initiation failed: ${errCode}: ${errMsg}` }], isError: true };
-          }
-
-          const { call_id } = await res.json();
-          api.log?.info?.(`pine-voice: call initiated, call_id=${call_id}`);
+          api.log?.info?.(`pine-voice: call initiated, call_id=${callId}`);
 
           return {
             content: [
               {
                 type: "text",
-                text: `Call initiated (call_id: ${call_id}).\n\nUse pine_voice_call_status with call_id "${call_id}" to check progress. Poll every 30 seconds until the call completes.`,
+                text: `Call initiated (call_id: ${callId}).\n\nUse pine_voice_call_status with call_id "${callId}" to check progress. Poll every 30 seconds until the call completes.`,
               },
             ],
-            structuredContent: { call_id, status: "initiated" },
+            structuredContent: { call_id: callId, status: "initiated" },
             isError: false,
           };
-        } catch (err: any) {
+        } catch (err: unknown) {
           return handleError(api, err);
         }
       },
@@ -163,37 +146,19 @@ export function registerVoiceCallTools(api: any) {
         call_id: Type.String({ description: "The call_id returned by pine_voice_call" }),
       }),
       async execute(_toolCallId: string, params: any) {
-        const configOrErr = getConfigOrError(api);
-        if ("isError" in configOrErr) return configOrErr;
-        const { gatewayUrl, headers } = configOrErr;
+        const clientOrErr = getClientOrError(api);
+        if (!(clientOrErr instanceof PineVoice)) return clientOrErr;
 
         try {
-          const res = await fetch(`${gatewayUrl}/api/v2/voice/call/${encodeURIComponent(params.call_id)}`, {
-            headers,
-          });
-
-          if (!res.ok) {
-            const body = await res.json().catch(() => null);
-            const errCode = body?.error?.code || "";
-            const errMsg = body?.error?.message || `HTTP ${res.status}`;
-            if (res.status === 401 || errCode === "TOKEN_EXPIRED") {
-              return { content: [{ type: "text", text: AUTH_EXPIRED_MESSAGE }], isError: true };
-            }
-            if (res.status === 404) {
-              return { content: [{ type: "text", text: `Call not found: ${params.call_id}` }], isError: true };
-            }
-            return { content: [{ type: "text", text: `Status check failed: ${errCode}: ${errMsg}` }], isError: true };
-          }
-
-          const data = await res.json();
+          const result = await clientOrErr.calls.get(params.call_id);
 
           // Terminal states: return formatted result
-          if (data.status === "completed" || data.status === "failed" || data.status === "cancelled") {
-            return formatResult(data as CallResult);
+          if (result.status === "completed" || result.status === "failed" || result.status === "cancelled") {
+            return formatResult(result as CallResult);
           }
 
           // Non-terminal: return progress message
-          const elapsed = data.duration_seconds ? formatDuration(data.duration_seconds) : "unknown";
+          const elapsed = result.durationSeconds ? formatDuration(result.durationSeconds) : "unknown";
           return {
             content: [
               {
@@ -201,10 +166,10 @@ export function registerVoiceCallTools(api: any) {
                 text: `Call is still in progress (${elapsed} elapsed).\n\nCall again in 30 seconds to check status.`,
               },
             ],
-            structuredContent: { call_id: params.call_id, status: data.status || "in_progress" },
+            structuredContent: { call_id: params.call_id, status: result.status || "in_progress" },
             isError: false,
           };
-        } catch (err: any) {
+        } catch (err: unknown) {
           return handleError(api, err);
         }
       },
@@ -231,11 +196,11 @@ function formatResult(result: CallResult) {
     };
   }
 
-  const durationMin = Math.floor((result.duration_seconds || 0) / 60);
-  const durationSec = (result.duration_seconds || 0) % 60;
+  const durationMin = Math.floor((result.durationSeconds || 0) / 60);
+  const durationSec = (result.durationSeconds || 0) % 60;
   const lines = [
-    `**Call ${result.status}** (${result.triage_category})`,
-    `Duration: ${durationMin}m ${durationSec}s | Credits charged: ${result.credits_charged}`,
+    `**Call ${result.status}** (${result.triageCategory})`,
+    `Duration: ${durationMin}m ${durationSec}s | Credits charged: ${result.creditsCharged}`,
     "",
     `**Summary:** ${result.summary}`,
   ];
