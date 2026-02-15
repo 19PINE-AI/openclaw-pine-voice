@@ -2,7 +2,7 @@
 
 Make phone calls via Pine AI's voice agent from OpenClaw. The AI agent calls the specified number, carries out the conversation based on your instructions, and returns a full transcript (and an optional LLM-generated summary if requested). The voice agent can only speak English.
 
-**Powered by [Pine AI](https://19pine.ai). Subject to [Pine AI Voice Terms of Service](https://19pine.ai/legal/voice-tos).**
+**Powered by [Pine AI](https://19pine.ai).**
 
 ## How is this different from the built-in voice-call plugin?
 
@@ -281,10 +281,6 @@ Users update with:
 openclaw plugins update openclaw-pine-voice
 openclaw gateway restart
 ```
-
-## Terms of Service
-
-This plugin connects to Pine AI's voice calling service. Pine AI is the service provider. All calls are recorded and transcribed. By using this plugin, you agree to [Pine AI's Voice Terms of Service](https://19pine.ai/legal/voice-tos).
 
 ## License
 
