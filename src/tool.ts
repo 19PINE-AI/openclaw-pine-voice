@@ -16,8 +16,8 @@ const AUTH_MISSING_MESSAGE = [
   "  openclaw pine-voice auth verify --email <USER_EMAIL> --request-token <TOKEN> --code <CODE>",
   "",
   "  # Step 3: Add both values to your plugin config in openclaw.json:",
-  '  #   plugins.entries.pine-voice.config.user_id = "<USER_ID>"',
-  '  #   plugins.entries.pine-voice.config.access_token = "<TOKEN>"',
+  '  #   plugins.entries.openclaw-pine-voice.config.user_id = "<USER_ID>"',
+  '  #   plugins.entries.openclaw-pine-voice.config.access_token = "<TOKEN>"',
   "",
   "  # Step 4: Restart the gateway",
   "  openclaw gateway restart",
@@ -40,7 +40,7 @@ type ToolError = { content: Array<{ type: string; text: string }>; isError: true
 
 /** Read plugin config and create a PineVoice SDK client. Returns error response if not authenticated. */
 function getClientOrError(api: any): PineVoice | ToolError {
-  const config = api.config?.plugins?.entries?.["pine-voice"]?.config as PineVoiceConfig | undefined;
+  const config = api.config?.plugins?.entries?.["openclaw-pine-voice"]?.config as PineVoiceConfig | undefined;
   if (!config?.access_token || !config?.user_id) {
     return { content: [{ type: "text", text: AUTH_MISSING_MESSAGE }], isError: true };
   }

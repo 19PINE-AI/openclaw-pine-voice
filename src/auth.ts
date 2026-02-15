@@ -56,11 +56,11 @@ export function registerAuthCommands(api: any) {
             );
 
             console.log("Authentication successful!");
-            console.log(`Add this to your pine-voice config in ~/.openclaw/openclaw.json:`);
+            console.log(`Add this to your plugin config in ~/.openclaw/openclaw.json:`);
             console.log("");
             console.log(`  "plugins": {`);
             console.log(`    "entries": {`);
-            console.log(`      "pine-voice": {`);
+            console.log(`      "openclaw-pine-voice": {`);
             console.log(`        "config": {`);
             console.log(`          "access_token": "${accessToken}",`);
             console.log(`          "user_id": "${userId}"`);
