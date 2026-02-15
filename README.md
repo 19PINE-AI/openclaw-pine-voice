@@ -40,7 +40,7 @@ The plugin provides three tools (all registered as optional):
 
 | Tool | Description |
 |---|---|
-| `pine_voice_call_and_wait` | **Recommended.** Initiates a call and blocks until it completes, returning the full transcript in one tool call. Uses SSE streaming for real-time delivery with automatic polling fallback. |
+| `pine_voice_call_and_wait` | **Recommended.** Initiates a call and blocks until it completes, returning the full transcript in one tool call. Uses SSE to wait for the final result with automatic polling fallback. |
 | `pine_voice_call` | Initiates a call and returns immediately with a `call_id`. Use with `pine_voice_call_status` for manual polling. |
 | `pine_voice_call_status` | Checks the status of a call initiated by `pine_voice_call`. |
 
@@ -171,8 +171,10 @@ The exact requirements vary depending on the type of call — anticipate what th
 When using `pine_voice_call_and_wait` (recommended):
 
 1. The tool sends your instructions to Pine's voice agent
-2. An SSE stream is opened for real-time status delivery (with automatic polling fallback)
+2. An SSE connection waits for the final result (with automatic polling fallback)
 3. You receive the full transcript (and an optional summary if requested) as soon as the call completes
+
+> **Note:** No real-time intermediate updates are available during the call. You will not receive "call connected" events, partial transcripts, or live conversation updates. The only result is the final transcript delivered after the call ends.
 
 When using `pine_voice_call` + `pine_voice_call_status` (manual):
 

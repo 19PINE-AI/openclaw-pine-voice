@@ -147,9 +147,11 @@ export function registerVoiceCallTools(api: any) {
       name: "pine_voice_call_status",
       description:
         "Check the status of a phone call initiated by pine_voice_call. " +
-        "Returns the current status, call phase, and partial transcript while in progress. " +
-        "When the call is complete, returns the full transcript (plus an LLM-generated summary if enable_summary was set to true). " +
+        "Returns the current status while in progress and the full transcript when the call is complete " +
+        "(plus an LLM-generated summary if enable_summary was set to true). " +
         "Poll this tool every 30 seconds after initiating a call until a transcript is present. " +
+        "Note: no real-time intermediate updates are available — you will not receive partial transcripts " +
+        "or 'call connected' events. Simply poll until the call reaches a terminal state. " +
         "CRITICAL: Do NOT rely on the status field to judge whether the call succeeded. " +
         "You MUST read the full transcript — especially what the OTHER party said. " +
         "If the other side was silent, responded with automated/voicemail messages, or never gave a meaningful human response, the call FAILED regardless of the technical status. " +
@@ -169,30 +171,15 @@ export function registerVoiceCallTools(api: any) {
             return formatResult(result as CallResult);
           }
 
-          // Non-terminal: return progress message with phase & partial transcript when available
+          // Non-terminal: return simple progress message.
+          // Note: Real-time intermediate updates (phase, partial transcript) are
+          // NOT currently available. The transcript is only delivered after the
+          // call completes.
           const elapsed = result.durationSeconds ? formatDuration(result.durationSeconds) : "unknown";
-          const resultAny = result as any;
-          const phase: string | undefined = resultAny.phase;
-          const partialTranscript: Array<{ speaker: string; text: string }> | undefined =
-            resultAny.partialTranscript ?? resultAny.partial_transcript;
 
           const progressLines: string[] = [];
-
-          if (phase === "connected") {
-            progressLines.push("Call connected — Pine's voice agent is speaking with the callee.");
-          } else if (phase) {
-            progressLines.push(`Call phase: ${phase} (${elapsed} elapsed).`);
-          } else {
-            progressLines.push(`Call is still in progress (${elapsed} elapsed).`);
-          }
-
-          if (partialTranscript && partialTranscript.length > 0) {
-            const recentTurns = partialTranscript.slice(-3);
-            const formatted = recentTurns.map((t) => `[${t.speaker}] ${t.text}`).join(" ");
-            progressLines.push("", `Recent transcript: ${formatted}`);
-          }
-
-          progressLines.push("", "Call again in 30 seconds to check status.");
+          progressLines.push(`Call is still in progress (${elapsed} elapsed). No intermediate updates are available — the transcript will be delivered when the call completes.`);
+          progressLines.push("", "Poll again in 30 seconds to check status.");
 
           return {
             content: [
@@ -218,8 +205,9 @@ export function registerVoiceCallTools(api: any) {
       description:
         "Make a phone call via Pine AI voice agent and wait for the result. This is the PREFERRED tool " +
         "for making calls — it blocks until the call completes and returns the full transcript " +
-        "in a single tool call. No manual polling needed. Uses real-time SSE streaming under the hood " +
-        "with automatic fallback to polling if SSE is unavailable. " +
+        "in a single tool call. No manual polling needed. Uses SSE under the hood to wait for " +
+        "the final result, with automatic fallback to polling if SSE is unavailable. " +
+        "No real-time intermediate updates are available — you simply wait for the final transcript. " +
         "Important: the voice agent can only speak English, so calls can only be delivered to English-speaking " +
         "countries and recipients who understand English. " +
         "BEFORE calling this tool, you MUST gather from the user all information that may be needed during " +

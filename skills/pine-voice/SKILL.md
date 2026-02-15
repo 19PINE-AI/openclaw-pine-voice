@@ -74,7 +74,11 @@ These patterns mean the call reached voicemail, an automated system, or the call
 ## Tools
 
 ### pine_voice_call_and_wait (preferred — initiate + wait)
-Initiates a phone call and blocks until it completes, returning the full result in a single tool call. Uses SSE streaming for real-time delivery with automatic fallback to polling. No manual polling needed. Parameters:
+Initiates a phone call and blocks until it completes, returning the full result in a single tool call. Uses SSE to wait for the final result with automatic fallback to polling. No manual polling needed.
+
+**Important:** No real-time intermediate updates are available. You will NOT receive "call connected" events, partial transcripts, or live conversation progress. The only result is the final complete transcript delivered after the call ends.
+
+Parameters:
 
 - `to` (required): Phone number in E.164 format (e.g., +14155551234). Must be in a supported country: US/CA (+1), UK (+44), AU (+61), NZ (+64), IE (+353).
 - `callee_name` (required): Name of the person or business being called
@@ -90,17 +94,13 @@ Initiates a phone call and blocks until it completes, returning the full result 
 Initiates a phone call and returns immediately with a `call_id`. At this point, the call is ALREADY ACTIVE — the voice agent has dialed and is on the line. Same parameters as `pine_voice_call_and_wait`. Use with `pine_voice_call_status` to poll for results.
 
 ### pine_voice_call_status (poll)
-Checks call progress using the `call_id` from pine_voice_call. Poll every 30 seconds until a transcript is present in the response. When the status is `in_progress`, the voice agent is ACTIVELY on the call speaking with the callee — it is NOT connecting or waiting. Returns the current phase and partial transcript while in progress, and full transcript and billing info when complete (plus summary if `enable_summary` was set to true).
+Checks call progress using the `call_id` from pine_voice_call. Poll every 30 seconds until a transcript is present in the response. When the status is `in_progress`, the voice agent is ACTIVELY on the call speaking with the callee — it is NOT connecting or waiting. Returns the full transcript and billing info when complete (plus summary if `enable_summary` was set to true).
 
 **CRITICAL:** When you receive the final result, do NOT assume the call succeeded just because the status says "completed" or "HungupByPeer". You MUST read the full transcript. If the other party never responded meaningfully (voicemail, silence, automated messages), the call failed.
 
 - `call_id` (required): The call_id returned by pine_voice_call
 
-**Real-time progress:** When the call is in progress, the status response now includes:
-- `phase`: "initiated" (dialing) or "connected" (callee answered, conversation active)
-- `partial_transcript`: Live transcript turns as the conversation progresses
-
-When the phase shows "connected", tell the user: "The callee has answered. Pine's voice agent is now in conversation." If partial transcript turns are available, you can share key points with the user.
+**Note:** No real-time intermediate updates are available. The `phase` and `partial_transcript` fields are defined in the schema but are NOT currently populated. You will not receive "call connected" events or live transcript turns. The only way to get the transcript is to wait for the call to complete. Simply poll until the status is terminal and the full transcript is present.
 
 ## Negotiation calls
 For calls involving negotiation (bill reduction, rate matching, fee waiver), provide a **thorough negotiation strategy**, not just a target:
@@ -126,6 +126,6 @@ The plugin uses these REST endpoints on the Pine Voice gateway (for transparency
 
 - **POST /api/v2/voice/call** — Initiate a call. Returns `{ "call_id": "...", "status": "in_progress" }`.
 - **GET /api/v2/voice/call/{call_id}** — Poll call status. Returns full transcript and billing info when complete (plus summary if requested).
-- **GET /api/v2/voice/call/{call_id}/stream** — SSE stream for real-time status and result delivery. Used by `pine_voice_call_and_wait` under the hood.
+- **GET /api/v2/voice/call/{call_id}/stream** — SSE stream that waits for the final call result. Used by `pine_voice_call_and_wait` under the hood. No intermediate events are delivered; only the final transcript after call completion.
 
 Auth: `Authorization: Bearer <token>` + `X-Pine-User-Id: <user_id>` headers.
