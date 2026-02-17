@@ -157,7 +157,7 @@ Then try real tasks:
 
 ### Supported countries
 
-The voice agent can only speak English. Calls can be placed to phone numbers in the following countries: US, Canada, Puerto Rico (+1), UK (+44), Australia (+61), New Zealand (+64), Singapore (+65), Hong Kong (+852), and China (+86, connection not guaranteed for all numbers). Calls to numbers outside these country codes will be rejected.
+The voice agent can only speak English. Calls can be placed to phone numbers in the following countries: US, Canada, Puerto Rico (+1), UK (+44), Australia (+61), New Zealand (+64), Singapore (+65), Ireland (+353), and Hong Kong (+852). Calls to numbers outside these country codes will be rejected.
 
 ### Caller personality
 

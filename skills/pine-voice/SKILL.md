@@ -3,7 +3,7 @@
 ## When to use
 Use `pine_voice_call_and_wait` (preferred) or `pine_voice_call` when the user wants you to **make a phone call** on their behalf. The Pine AI voice agent will call the specified number, navigate IVR systems, handle verification, conduct negotiations, and carry out the conversation autonomously.
 
-**Important:** The voice agent can only speak English. Calls can be placed to the US, Canada, Puerto Rico (+1), UK (+44), Australia (+61), New Zealand (+64), Singapore (+65), Hong Kong (+852), and China (+86, connection not guaranteed for all numbers). Do not use this tool for calls to numbers outside these countries.
+**Important:** The voice agent can only speak English. Calls can be placed to the US, Canada, Puerto Rico (+1), UK (+44), Australia (+61), New Zealand (+64), Singapore (+65), Ireland (+353), and Hong Kong (+852). Do not use this tool for calls to numbers outside these countries.
 
 ## Best for
 - Calling customer service to negotiate bills, request credits, or resolve issues
@@ -80,7 +80,7 @@ Initiates a phone call and blocks until it completes, returning the full result 
 
 Parameters:
 
-- `to` (required): Phone number in E.164 format (e.g., +14155551234). Must be in a supported country: US/CA/PR (+1), UK (+44), AU (+61), NZ (+64), SG (+65), HK (+852), CN (+86, connection not guaranteed).
+- `to` (required): Phone number in E.164 format (e.g., +14155551234). Must be in a supported country: US/CA/PR (+1), UK (+44), AU (+61), NZ (+64), SG (+65), IE (+353), HK (+852).
 - `callee_name` (required): Name of the person or business being called
 - `callee_context` (required): Comprehensive context — include all authentication, verification, and payment info the agent may need during the call
 - `objective` (required): Specific goal with negotiation targets and constraints if applicable
