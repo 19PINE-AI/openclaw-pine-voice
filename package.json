@@ -36,7 +36,14 @@
   ],
   "author": "Pine AI",
   "license": "MIT",
-  "homepage": "https://pineclaw.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/19PINE-AI/openclaw-pine-voice.git"
+  },
+  "homepage": "https://github.com/19PINE-AI/openclaw-pine-voice#readme",
+  "bugs": {
+    "url": "https://github.com/19PINE-AI/openclaw-pine-voice/issues"
+  },
   "engines": {
     "node": ">=18"
   },

@@ -13,7 +13,7 @@ Publishing uses OIDC-based trusted publishing — no npm tokens needed.
    ```
 2. Go to **npmjs.com** → **openclaw-pine-voice** → **Settings** → **Trusted Publisher**
 3. Select **GitHub Actions** and configure:
-   - **Organization or user**: `RunVid`
+   - **Organization or user**: `19PINE-AI`
    - **Repository**: `openclaw-pine-voice`
    - **Workflow filename**: `publish.yml`
    - **Environment name**: *(leave blank)*
