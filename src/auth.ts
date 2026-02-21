@@ -19,6 +19,62 @@ import { PineVoice, AuthError } from "pine-voice";
 const pendingAuth = new Map<string, string>(); // email → requestToken
 
 // ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+const VOICE_TOOLS = [
+  "pine_voice_call_and_wait",
+  "pine_voice_call",
+  "pine_voice_call_status",
+] as const;
+
+/**
+ * Build an updated config that stores credentials and ensures voice tools
+ * are present in `tools.allow`. Pure function — no side effects.
+ */
+export function buildAuthConfig(
+  cfg: Record<string, any>,
+  accessToken: string,
+  userId: string,
+): { updatedConfig: Record<string, any>; addedTools: string[] } {
+  const plugins = (cfg.plugins ?? {}) as Record<string, any>;
+  const entries = (plugins.entries ?? {}) as Record<string, any>;
+  const pluginEntry = (entries["openclaw-pine-voice"] ?? {}) as Record<string, any>;
+  const tools = (cfg.tools ?? {}) as Record<string, any>;
+  const existingAllow = Array.isArray(tools.allow)
+    ? tools.allow.filter((t: unknown): t is string => typeof t === "string")
+    : [];
+
+  const addedTools = VOICE_TOOLS.filter(t => !existingAllow.includes(t));
+  const mergedAllow = [...existingAllow, ...addedTools];
+
+  return {
+    updatedConfig: {
+      ...cfg,
+      plugins: {
+        ...plugins,
+        entries: {
+          ...entries,
+          "openclaw-pine-voice": {
+            ...pluginEntry,
+            config: {
+              ...(pluginEntry.config ?? {}),
+              access_token: accessToken,
+              user_id: userId,
+            },
+          },
+        },
+      },
+      tools: {
+        ...tools,
+        allow: mergedAllow,
+      },
+    },
+    addedTools: [...addedTools],
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Tool registration (primary path)
 // ---------------------------------------------------------------------------
 
@@ -107,54 +163,18 @@ export function registerAuthTools(api: any) {
           params.code,
         );
 
-        // Write credentials + ensure voice tools are in tools.allow
         const cfg = api.runtime.config.loadConfig();
-        const plugins = (cfg.plugins ?? {}) as Record<string, any>;
-        const entries = (plugins.entries ?? {}) as Record<string, any>;
-        const pluginEntry = (entries["openclaw-pine-voice"] ?? {}) as Record<string, any>;
-        const tools = (cfg.tools ?? {}) as Record<string, any>;
-        const existingAllow = Array.isArray(tools.allow) ? tools.allow as string[] : [];
-
-        const requiredTools = [
-          "pine_voice_call_and_wait",
-          "pine_voice_call",
-          "pine_voice_call_status",
-        ];
-        const missingTools = requiredTools.filter(t => !existingAllow.includes(t));
-        const mergedAllow = [...existingAllow, ...missingTools];
-
-        const updatedConfig = {
-          ...cfg,
-          plugins: {
-            ...plugins,
-            entries: {
-              ...entries,
-              "openclaw-pine-voice": {
-                ...pluginEntry,
-                config: {
-                  ...(pluginEntry.config ?? {}),
-                  access_token: accessToken,
-                  user_id: userId,
-                },
-              },
-            },
-          },
-          tools: {
-            ...tools,
-            allow: mergedAllow,
-          },
-        };
-
+        const { updatedConfig, addedTools } = buildAuthConfig(cfg, accessToken, userId);
         await api.runtime.config.writeConfigFile(updatedConfig);
         pendingAuth.delete(params.email);
 
-        const toolsNote = missingTools.length > 0
-          ? ` Voice tools (${missingTools.join(", ")}) have been added to tools.allow.`
+        const toolsNote = addedTools.length > 0
+          ? ` Voice tools (${addedTools.join(", ")}) have been added to tools.allow.`
           : "";
 
         api.log?.info?.(`pine-voice: auth successful for ${params.email}, credentials saved`);
-        if (missingTools.length > 0) {
-          api.log?.info?.(`pine-voice: added ${missingTools.join(", ")} to tools.allow`);
+        if (addedTools.length > 0) {
+          api.log?.info?.(`pine-voice: added ${addedTools.join(", ")} to tools.allow`);
         }
 
         return {
@@ -239,21 +259,15 @@ export function registerAuthCommands(api: any) {
               opts.code,
             );
 
-            console.log("Authentication successful!");
-            console.log(`Add this to your plugin config in ~/.openclaw/openclaw.json:`);
-            console.log("");
-            console.log(`  "plugins": {`);
-            console.log(`    "entries": {`);
-            console.log(`      "openclaw-pine-voice": {`);
-            console.log(`        "config": {`);
-            console.log(`          "access_token": "${accessToken}",`);
-            console.log(`          "user_id": "${userId}"`);
-            console.log(`        }`);
-            console.log(`      }`);
-            console.log(`    }`);
-            console.log(`  }`);
-            console.log("");
-            console.log("Then restart the gateway:");
+            const cfg = api.runtime.config.loadConfig();
+            const { updatedConfig, addedTools } = buildAuthConfig(cfg, accessToken, userId);
+            await api.runtime.config.writeConfigFile(updatedConfig);
+
+            console.log("Authentication successful! Credentials saved to openclaw.json.");
+            if (addedTools.length > 0) {
+              console.log(`Voice tools (${addedTools.join(", ")}) added to tools.allow.`);
+            }
+            console.log("\nRestart the gateway for changes to take effect:");
             console.log("  openclaw gateway restart");
           } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
