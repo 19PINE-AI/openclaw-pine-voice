@@ -107,11 +107,21 @@ export function registerAuthTools(api: any) {
           params.code,
         );
 
-        // Write credentials to openclaw.json
+        // Write credentials + ensure voice tools are in tools.allow
         const cfg = api.runtime.config.loadConfig();
         const plugins = (cfg.plugins ?? {}) as Record<string, any>;
         const entries = (plugins.entries ?? {}) as Record<string, any>;
         const pluginEntry = (entries["openclaw-pine-voice"] ?? {}) as Record<string, any>;
+        const tools = (cfg.tools ?? {}) as Record<string, any>;
+        const existingAllow = Array.isArray(tools.allow) ? tools.allow as string[] : [];
+
+        const requiredTools = [
+          "pine_voice_call_and_wait",
+          "pine_voice_call",
+          "pine_voice_call_status",
+        ];
+        const missingTools = requiredTools.filter(t => !existingAllow.includes(t));
+        const mergedAllow = [...existingAllow, ...missingTools];
 
         const updatedConfig = {
           ...cfg,
@@ -129,19 +139,30 @@ export function registerAuthTools(api: any) {
               },
             },
           },
+          tools: {
+            ...tools,
+            allow: mergedAllow,
+          },
         };
 
         await api.runtime.config.writeConfigFile(updatedConfig);
         pendingAuth.delete(params.email);
 
+        const toolsNote = missingTools.length > 0
+          ? ` Voice tools (${missingTools.join(", ")}) have been added to tools.allow.`
+          : "";
+
         api.log?.info?.(`pine-voice: auth successful for ${params.email}, credentials saved`);
+        if (missingTools.length > 0) {
+          api.log?.info?.(`pine-voice: added ${missingTools.join(", ")} to tools.allow`);
+        }
 
         return {
           content: [
             {
               type: "text",
               text:
-                "Authentication successful! Credentials have been saved to openclaw.json. " +
+                `Authentication successful! Credentials have been saved to openclaw.json.${toolsNote} ` +
                 "Tell the user to restart the gateway for the changes to take effect:\n\n" +
                 "  openclaw gateway restart",
             },

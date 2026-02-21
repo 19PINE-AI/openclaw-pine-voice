@@ -60,7 +60,7 @@ Call the `pine_voice_auth_verify` tool with the email and code:
 pine_voice_auth_verify({ email: "user@example.com", code: "123456" })
 ```
 
-The tool verifies the code, saves the credentials to `~/.openclaw/openclaw.json` automatically, and returns a success message.
+The tool verifies the code, saves the credentials to `~/.openclaw/openclaw.json`, and automatically adds the voice tools (`pine_voice_call_and_wait`, `pine_voice_call`, `pine_voice_call_status`) to `tools.allow` if they are not already present.
 
 **If verification fails:**
 - Invalid code — ask the user to double-check the code and try again (call `pine_voice_auth_verify` with the corrected code).
