@@ -120,6 +120,67 @@ For calls involving negotiation (bill reduction, rate matching, fee waiver), pro
 **Restaurant reservation:**
 "Call the restaurant at +14155559876 and make a reservation for 4 people tonight at 7pm. If 7pm is not available, try 7:30 or 8pm. Name for the reservation: Jane Doe."
 
+## Troubleshooting
+
+### "Tool pine_voice_call_and_wait not found"
+
+The voice tools (`pine_voice_call_and_wait`, `pine_voice_call`, `pine_voice_call_status`) are registered as **optional** tools. They are only available to the AI agent if they are explicitly listed in the `tools.allow` configuration.
+
+**Cause:** The tool names are missing from `tools.allow` in `openclaw.json`.
+
+**Fix:** Add the voice tools to `tools.allow` in `openclaw.json`. Any of these approaches work:
+
+1. **Re-run authentication** — the `pine_voice_auth_verify` tool automatically adds all voice tools to `tools.allow`. Use the `pine-voice-auth` skill to re-authenticate, then restart the gateway.
+
+2. **Add tools manually** — edit `openclaw.json` and add the tool names to `tools.allow`:
+   ```json
+   { "tools": { "allow": ["pine_voice_call_and_wait", "pine_voice_call", "pine_voice_call_status"] } }
+   ```
+
+After editing the config, restart the gateway: `openclaw gateway restart`.
+
+### "Pine Voice is not authenticated"
+
+The plugin has no saved credentials. Run the auth flow using the `pine-voice-auth` skill.
+
+### "Pine Voice authentication has expired"
+
+The access token has expired. Re-run the auth flow using the `pine-voice-auth` skill to get a fresh token.
+
+### "TOKEN_EXPIRED" or 401 errors during a call
+
+The token was valid at auth time but has since expired. Re-authenticate using the `pine-voice-auth` skill and restart the gateway.
+
+### "SUBSCRIPTION_REQUIRED: Pine AI Pro subscription required"
+
+The user's Pine AI account does not have an active Pro subscription, or the subscription has expired/been cancelled. The user must subscribe or renew at https://19pine.ai.
+
+### "INSUFFICIENT_CREDITS: At least N credits required"
+
+The user's credit balance is too low to initiate a call. Each call requires a minimum of 50 credits (base charge). The user must add credits at https://19pine.ai.
+
+### "RATE_LIMITED: You've already called this number N times today"
+
+The voice gateway enforces a per-target daily call limit. The user has called the same phone number too many times in one day. Wait until the next day or call a different number.
+
+### "RATE_LIMITED: Maximum N concurrent calls exceeded"
+
+The user has too many active calls running simultaneously (default limit: 5). Wait for an active call to finish before starting a new one.
+
+### "POLICY_VIOLATION" or safety review rejection
+
+The gateway's safety review rejected the call request. Common reasons:
+- Objective is too vague (e.g., "just call them")
+- Target number is in an unsupported country
+- Negotiator caller type used without a complete negotiation strategy
+- Number is on the emergency or premium-rate blocklist
+
+Read the error message for specifics and adjust the call parameters accordingly.
+
+### "PHONE_REQUIRED"
+
+The user has not registered a phone number in their Pine AI account. They need to add one in their account settings at https://www.19pine.ai.
+
 ## HTTP API reference
 
 The plugin uses these REST endpoints on the Pine Voice gateway (for transparency — the tools handle this automatically):

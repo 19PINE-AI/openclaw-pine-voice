@@ -1,6 +1,6 @@
 {
   "name": "openclaw-pine-voice",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Make phone calls via Pine AI voice agent from OpenClaw",
   "type": "module",
   "main": "dist/index.js",

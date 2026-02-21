@@ -99,6 +99,30 @@ Access tokens expire periodically. When a call fails with `TOKEN_EXPIRED` or a 4
 1. Inform the user their token has expired and needs to be refreshed
 2. Re-run this auth flow starting from step 1
 
+## Troubleshooting
+
+### "Tool pine_voice_call_and_wait not found" after successful auth
+
+Authentication succeeded but the tools are still not visible. This means the tool names were not added to `tools.allow` during verification (e.g., the config was edited manually afterward).
+
+**Fix:** Re-run `pine_voice_auth_verify` which automatically adds the voice tools to `tools.allow`, then restart the gateway. Alternatively, manually add `"pine_voice_call_and_wait"`, `"pine_voice_call"`, and `"pine_voice_call_status"` to the `tools.allow` array in `openclaw.json`.
+
+### Auth request fails with 400/422
+
+The email is likely not registered with Pine AI. Ask the user to verify the email address or sign up at https://19pine.ai.
+
+### "No pending auth request found for this email"
+
+The `pine_voice_auth_verify` tool was called without a prior `pine_voice_auth_request`, or the in-memory request token was lost (e.g., gateway restarted between steps). Go back to step 2 and send a new verification code.
+
+### Code expired
+
+Verification codes expire after a few minutes. If the user took too long, go back to step 2 to send a fresh code.
+
+### Gateway restart required after auth
+
+Credentials are saved to `openclaw.json` but the gateway loads config at startup. The gateway **must be restarted** (`openclaw gateway restart`) for new credentials to take effect. If voice tools fail immediately after auth, remind the user to restart.
+
 ## Security notes
 
 - Never log or echo the access token in plaintext beyond what is needed
